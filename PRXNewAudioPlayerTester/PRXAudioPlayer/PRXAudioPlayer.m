@@ -43,7 +43,11 @@ static PRXAudioPlayer* sharedPlayerInstance;
 #pragma mark Setup
 
 - (id) init {
-    return [self initWithAudioSessionManagement:YES]; 
+    self = [self initWithAudioSessionManagement:YES];
+    if (self) {
+        
+    }
+    return self;
 }
 
 - (id) initWithAudioSessionManagement:(BOOL)manageSession {
@@ -51,14 +55,19 @@ static PRXAudioPlayer* sharedPlayerInstance;
     if (self) {
         _observers = [NSMutableArray array];
         
+        [UIApplication.sharedApplication beginReceivingRemoteControlEvents];
+        
         [NSNotificationCenter.defaultCenter addObserver:self
                                                selector:@selector(audioSessionInterruption:)
                                                    name:AVAudioSessionInterruptionNotification object:nil];
+        
         _reach = [Reachability reachabilityWithHostname:@"www.google.com"];
+        
         __block PRXAudioPlayer *p = self; 
         self.reach.reachableBlock = ^(Reachability *r) {
             [p didEndBufferInterruption];
         };
+        
         if (manageSession) {
             NSError *setCategoryError = nil;
             BOOL success = [[AVAudioSession sharedInstance]
@@ -583,42 +592,70 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 - (NSDictionary*) MPNowPlayingInfoCenterNowPlayingInfo {
     NSMutableDictionary *info;
+    
     if (self.currentPlayable && self.currentPlayable.mediaItemProperties) {
         info = self.currentPlayable.mediaItemProperties.mutableCopy;
     } else {
         info = [NSMutableDictionary dictionaryWithCapacity:10];
     }
-    if (!info[MPMediaItemPropertyArtist]) { 
-        info[MPMediaItemPropertyArtist] = [self defaultNowPlayingArtist];
+    
+    //    Set defaults if missing
+    NSArray* metadata = self.player.currentItem.asset.commonMetadata;
+    
+    if (!info[MPMediaItemPropertyPlaybackDuration]) {
+        float _playbackDuration = self.currentPlayerItem ? CMTimeGetSeconds(self.currentPlayerItem.duration) : 0.0f;
+        NSNumber* playbackDuration = @(_playbackDuration);
+        info[MPMediaItemPropertyPlaybackDuration] = playbackDuration;
     }
     
-    float _playbackDuration = self.currentPlayerItem ? CMTimeGetSeconds(self.currentPlayerItem.duration) : 0.0f;
-    NSNumber* playbackDuration = @(_playbackDuration);
-    info[MPMediaItemPropertyPlaybackDuration] = playbackDuration;
+    if (!info[MPNowPlayingInfoPropertyElapsedPlaybackTime]) {
+        float _elapsedPlaybackTime = self.currentPlayerItem ? CMTimeGetSeconds(self.currentPlayerItem.currentTime) : 0.0f;
+        NSNumber* elapsedPlaybackTime = @(_elapsedPlaybackTime);
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsedPlaybackTime;
+    }
     
-    float _elapsedPlaybackTime = self.currentPlayerItem ? CMTimeGetSeconds(self.currentPlayerItem.currentTime) : 0.0f;
-    NSNumber* elapsedPlaybackTime = @(_elapsedPlaybackTime);
-    info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsedPlaybackTime;
-    
+    if (!info[MPMediaItemPropertyArtwork]) {
+        NSArray* artworkMetadata = [AVMetadataItem metadataItemsFromArray:metadata
+                                                                  withKey:AVMetadataCommonKeyArtwork
+                                                                 keySpace:AVMetadataKeySpaceCommon];
+        if (artworkMetadata.count > 0) {
+            AVMetadataItem* artworkMetadataItem = artworkMetadata[0];
             
-    NSArray* metadata = self.player.currentItem.asset.commonMetadata;
-    NSArray* artworkMetadata = [AVMetadataItem metadataItemsFromArray:metadata
-                                                              withKey:AVMetadataCommonKeyArtwork
-                                                             keySpace:AVMetadataKeySpaceCommon];
-    if (artworkMetadata.count > 0) {
-        AVMetadataItem* artworkMetadataItem = artworkMetadata[0];
+            UIImage* artworkImage = [UIImage imageWithData:artworkMetadataItem.value[@"data"]];
+            MPMediaItemArtwork* artwork = [[MPMediaItemArtwork alloc] initWithImage:artworkImage];
+            
+            info[MPMediaItemPropertyArtwork] = artwork;
+        }
+    }
+    
+    if (!info[MPMediaItemPropertyTitle]) {
+        NSArray* _metadata = [AVMetadataItem metadataItemsFromArray:metadata withKey:AVMetadataCommonKeyTitle keySpace:AVMetadataKeySpaceCommon];
         
-        UIImage* artworkImage = [UIImage imageWithData:artworkMetadataItem.value[@"data"]];
-        MPMediaItemArtwork* artwork = [[MPMediaItemArtwork alloc] initWithImage:artworkImage];
+        if (_metadata.count > 0) {
+            AVMetadataItem* _metadataItem = _metadata[0];
+            info[MPMediaItemPropertyTitle] = _metadataItem.value;
+        }
+    }
+
+    if (!info[MPMediaItemPropertyAlbumTitle]) {
+        NSArray* _metadata = [AVMetadataItem metadataItemsFromArray:metadata withKey:AVMetadataCommonKeyAlbumName keySpace:AVMetadataKeySpaceCommon];
         
-        info[MPMediaItemPropertyArtwork] = artwork;
+        if (_metadata.count > 0) {
+            AVMetadataItem* _metadataItem = _metadata[0];
+            info[MPMediaItemPropertyAlbumTitle] = _metadataItem.value;
+        }
+    }
+    
+    if (!info[MPMediaItemPropertyArtist]) {
+        NSArray* _metadata = [AVMetadataItem metadataItemsFromArray:metadata withKey:AVMetadataCommonKeyArtist keySpace:AVMetadataKeySpaceCommon];
+        
+        if (_metadata.count > 0) {
+            AVMetadataItem* _metadataItem = _metadata[0];
+            info[MPMediaItemPropertyArtist] = _metadataItem.value;
+        }
     }
     
     return info; 
-}
-
-- (NSString *) defaultNowPlayingArtist {
-    return @"PRXAudioPlayer"; 
 }
 
 - (void) setMPNowPlayingInfoCenterNowPlayingInfo {

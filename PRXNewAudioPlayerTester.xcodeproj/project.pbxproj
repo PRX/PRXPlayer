@@ -147,8 +147,8 @@
 			isa = PBXGroup;
 			children = (
 				B325116016D3D098006D18CF /* PRXAudioPlayer.h */,
-				B325116116D3D098006D18CF /* PRXAudioPlayer.m */,
 				B325116516D3D7D4006D18CF /* PRXAudioPlayer_private.h */,
+				B325116116D3D098006D18CF /* PRXAudioPlayer.m */,
 				B32511A616D3F50E006D18CF /* PRXQueueAudioPlayer.h */,
 				B32511A716D3F50E006D18CF /* PRXQueueAudioPlayer.m */,
 				B32511A916D3F667006D18CF /* PRXAudioQueue.h */,

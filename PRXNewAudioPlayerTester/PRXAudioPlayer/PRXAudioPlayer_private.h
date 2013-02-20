@@ -63,6 +63,5 @@ extern float LongPeriodicTimeObserver;
 
 - (NSDictionary*) MPNowPlayingInfoCenterNowPlayingInfo;
 - (void) setMPNowPlayingInfoCenterNowPlayingInfo;
-- (NSString *) defaultNowPlayingArtist;
 
 @end

@@ -62,7 +62,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
         if (manageSession) {
             NSError *setCategoryError = nil;
             BOOL success = [[AVAudioSession sharedInstance]
-                        setCategory: AVAudioSessionCategoryAmbient
+                        setCategory: AVAudioSessionCategoryPlayback
                         error: &setCategoryError];
         
             if (!success) { /* handle the error in setCategoryError */ }

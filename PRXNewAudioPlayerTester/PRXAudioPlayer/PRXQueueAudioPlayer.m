@@ -124,6 +124,12 @@
     }]; 
 }
 
+- (int) nextQueuePositionForObject:(id<PRXPlayable>)playable {
+    return [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable> pl, NSUInteger idx, BOOL *stop) {
+        return ([pl isEqualToPlayable:pl] && idx >= self.queue.cursor);
+    }];
+}
+
 - (NSIndexSet *) allQueuePositionsForObject:(id<PRXPlayable>)playable {
     return [self.queue indexesOfObjectsPassingTest:^BOOL(id<PRXPlayable>playable, NSUInteger idx, BOOL *stop) {
         return [playable isEqualToPlayable:playable];

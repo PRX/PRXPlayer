@@ -168,11 +168,11 @@
     }];
 }
 
-- (id<PRXPlayable>)playableAtCurrentQueuePosition {
+- (id<PRXPlayable>) playableAtCurrentQueuePosition {
     return [self.queue objectAtIndex:self.queue.cursor];
 }
 
-- (id<PRXPlayable>)playableAtQueuePosition:(NSUInteger)position {
+- (id<PRXPlayable>) playableAtQueuePosition:(NSUInteger)position {
     return [self.queue objectAtIndex:position]; 
 }
 

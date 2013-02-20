@@ -30,7 +30,11 @@
         case 0:
             return [NSURL URLWithString:@"http://stream.publicradioremix.org:8081/remixxm"];
         case 1:
-            return [NSURL URLWithString:@"http://www.podtrac.com/pts/redirect.mp3/media.blubrry.com/99percentinvisible/cdn.99percentinvisible.org/wp-content/uploads/73-The-Zanzibar-and-Other-Building-Poems.mp3"]; 
+            return [NSURL URLWithString:@"http://www.podtrac.com/pts/redirect.mp3/media.blubrry.com/99percentinvisible/cdn.99percentinvisible.org/wp-content/uploads/73-The-Zanzibar-and-Other-Building-Poems.mp3"];
+        case 2:
+            return [NSURL URLWithString:@"http://wbur-sc.streamguys.com/wbur.aac"];
+        case 3:
+            return [NSURL URLWithString:@"http://feeds.themoth.org/~r/themothpodcast/~5/7tiM_vhvFMI/moth-podcast-264-walter-mosley.mp3"];
         default:
             return [NSURL URLWithString:@"http://wbur-sc.streamguys.com/wbur.aac"];
     }

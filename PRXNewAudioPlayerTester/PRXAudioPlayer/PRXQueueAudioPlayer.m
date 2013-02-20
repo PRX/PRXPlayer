@@ -176,6 +176,22 @@
     return [self.queue objectAtIndex:position]; 
 }
 
+- (NSDictionary*) MPNowPlayingInfoCenterNowPlayingInfo {
+    NSMutableDictionary *info;
+    
+    info = [[super MPNowPlayingInfoCenterNowPlayingInfo] mutableCopy];
+    
+    if (!info[MPMediaItemPropertyAlbumTrackCount]) {
+        info[MPMediaItemPropertyAlbumTrackCount] = @(self.queue.count);
+    }
+
+    if (!info[MPMediaItemPropertyAlbumTrackNumber]) {
+        info[MPMediaItemPropertyAlbumTrackNumber] = @(self.queue.cursor + 1);
+    }
+    
+    return info;
+}
+
 #pragma mark - PRXAudioQueue delegate
 
 - (void) queueDidChange:(PRXAudioQueue *)queue {

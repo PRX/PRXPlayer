@@ -8,6 +8,7 @@
 
 #import "PRXAudioPlayer.h"
 #import "Reachability.h"
+#import <MediaPlayer/MediaPlayer.h>
 
 @interface PRXAudioPlayer ()
 

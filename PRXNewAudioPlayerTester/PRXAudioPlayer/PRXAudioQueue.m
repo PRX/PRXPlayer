@@ -7,6 +7,7 @@
 //
 
 #import "PRXAudioQueue.h"
+
 @interface PRXAudioQueue ()
 
 @property (nonatomic, strong) NSMutableArray *backingStore;

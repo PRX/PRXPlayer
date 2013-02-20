@@ -8,7 +8,6 @@
 
 #import "PRXAudioPlayer.h"
 #import "PRXAudioPlayer_private.h"
-#import <MediaPlayer/MediaPlayer.h>
 
 @implementation PRXAudioPlayer
 

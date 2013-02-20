@@ -12,8 +12,9 @@
 @interface APViewController ()
 
 @property (nonatomic, strong) APEpisode *remixStream;
+@property (nonatomic, strong) APEpisode *wburStream;
 @property (nonatomic, strong) APEpisode *ninetyNine;
-@property (nonatomic, strong) APEpisode *wburStream; 
+@property (nonatomic, strong) APEpisode *moth;
 
 @end
 
@@ -47,6 +48,12 @@
 {
     if (!self.wburStream) { self.wburStream = [[APEpisode alloc] initWithIdentifier:2]; }
     [[PRXAudioPlayer sharedPlayer] playPlayable:self.wburStream];
+}
+
+- (IBAction)playMothPressed:(id)sender {
+    if (!self.moth) { self.moth = [[APEpisode alloc] initWithIdentifier:3]; }
+    [[PRXAudioPlayer sharedPlayer] playPlayable:self.moth];
+
 }
 
 @end

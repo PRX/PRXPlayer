@@ -30,7 +30,7 @@
 
 @protocol PRXAudioPlayerObserver;
 
-@interface PRXAudioPlayer : UIResponder {
+@interface PRXAudioPlayer : UIResponder<AVAudioSessionDelegate> {
     // used for determining when the player crosses a meaningful boundary
     id playerSoftEndBoundaryTimeObserver;
     id playerPeriodicTimeObserver;

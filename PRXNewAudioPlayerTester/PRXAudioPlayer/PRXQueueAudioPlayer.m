@@ -13,6 +13,25 @@
 
 - (BOOL) hasNext;
 {
+- (void)loadAndPlayPlayable:(id<PRXPlayable>)playable {
+  if ([self queueContainsPlayable:playable]) {
+    self.queue.cursor = [self nextQueuePositionForObject:playable];
+    [super loadAndPlayPlayable:playable];
+  } else {
+    PRXLog(@"Adding episode to queue and playing (or holding).");
+    [self enqueueAfterCurrentPosition:playable];
+  }
+}
+
+- (void)play {
+  if (self.currentPlayable) {
+    [super play];
+  } else if (self.queue.isEmpty) {
+    [self loadAndPlayPlayable:self.queue[self.queue.cursor]];
+  }
+}
+
+- (BOOL) hasNext {
     return (self.queue.cursor != NSNotFound && self.queue.cursor < [self.queue count] - 1);
 }
 

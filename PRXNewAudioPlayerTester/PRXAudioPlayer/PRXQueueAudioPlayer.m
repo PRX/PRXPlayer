@@ -11,7 +11,7 @@
 
 @implementation PRXQueueAudioPlayer
 
-- (void)loadAndPlayPlayable:(id<PRXPlayable>)playable {
+- (void) loadAndPlayPlayable:(id<PRXPlayable>)playable {
   if ([self queueContainsPlayable:playable]) {
     self.queue.cursor = [self nextQueuePositionForObject:playable];
     [super loadAndPlayPlayable:playable];
@@ -22,7 +22,7 @@
   }
 }
 
-- (void)play {
+- (void) play {
   if (self.currentPlayable) {
     [super play];
   } else if (self.queue.isEmpty) {

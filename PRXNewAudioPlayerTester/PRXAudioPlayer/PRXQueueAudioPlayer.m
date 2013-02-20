@@ -126,6 +126,11 @@
 
 - (void) emptyQueue {
     [self.queue removeAllObjects];
+  
+    if (self.player.rate > 0.0f) {
+        [self enqueue:self.currentPlayable];
+        [self reportPlayerStatusChangeToObservers];
+    }
 }
 
 - (BOOL) queueContainsPlayable:(id<PRXPlayable>)playable {

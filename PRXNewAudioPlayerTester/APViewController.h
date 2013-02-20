@@ -17,6 +17,9 @@
 @property (nonatomic, strong) IBOutlet UILabel* timeLabel;
 @property (nonatomic, strong) IBOutlet UILabel* stateLabel;
 
+- (IBAction)toggleAction:(id)sender;
+- (IBAction)jumpAction:(id)sender;
+
 - (IBAction)playRemixStreamPressed:(id)sender;
 - (IBAction)playWBURStream:(id)sender; 
 

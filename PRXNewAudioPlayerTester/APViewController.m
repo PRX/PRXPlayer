@@ -10,7 +10,9 @@
 #import "PRXAudioPlayer.h"
 #import "PRXQueueAudioPlayer.h"
 
-@interface APViewController ()
+@interface APViewController () {
+    NSTimer* refreshUITimer;
+}
 
 @property (nonatomic, strong) APEpisode *remixStream;
 @property (nonatomic, strong) APEpisode *wburStream;
@@ -22,25 +24,36 @@
 @implementation APViewController
 
 - (void) observedPlayerStatusDidChange:(AVPlayer *)player {
-    [self labelize];    
+    [self labelize:nil];
 }
 
 
 - (void) observedPlayerDidObservePeriodicTimeInterval:(AVPlayer *)player {
-    [self labelize];
+    [self labelize:nil];
 }
 
-- (void)labelize {
+- (void)labelize:(id)sender {
     PRXQueueAudioPlayer* pl = PRXQueueAudioPlayer.sharedPlayer;
     
     self.queueLabel.text = [NSString stringWithFormat:@"%i of %i", (pl.queue.cursor + 1), pl.queue.count];
-    
-    float sec = (pl.player.currentItem.currentTime.value / pl.player.currentItem.currentTime.timescale);
 
-    self.timeLabel.text = [NSString stringWithFormat:@"%f : %f", sec, CMTimeGetSeconds(pl.player.currentItem.duration)];
+    NSLog(@"Rate: %f", pl.player.rate);
+    NSLog(@"Seconds; %f", CMTimeGetSeconds(pl.player.currentItem.currentTime));
+    NSLog(@"Buffer: %f", pl.buffer);
+    NSLog(@"------------------");
+
+    self.timeLabel.text = [NSString stringWithFormat:@"%f : %f", CMTimeGetSeconds(pl.player.currentItem.currentTime), CMTimeGetSeconds(pl.player.currentItem.duration)];
     self.stateLabel.text = [NSString stringWithFormat:@"IDK!!"];
-    
-    [self.timeLabel setNeedsDisplay];
+}
+
+
+- (IBAction)toggleAction:(id)sender {
+    [PRXQueueAudioPlayer.sharedPlayer togglePlayPause];
+}
+
+- (IBAction)jumpAction:(id)sender {
+    CMTime time = CMTimeMake(-3600, 1);
+    [PRXQueueAudioPlayer.sharedPlayer.player seekToTime:time];
 }
 
 
@@ -50,6 +63,13 @@
 	// Do any additional setup after loading the view, typically from a nib.
     
     [PRXQueueAudioPlayer.sharedPlayer addObserver:self persistent:YES];
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    
+    refreshUITimer = [NSTimer scheduledTimerWithTimeInterval:0.4 target:self selector:@selector(labelize:) userInfo:nil repeats:YES];
+
 }
 
 - (void)didReceiveMemoryWarning

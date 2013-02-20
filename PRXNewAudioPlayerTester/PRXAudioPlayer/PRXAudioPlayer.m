@@ -64,8 +64,13 @@ static PRXAudioPlayer* sharedPlayerInstance;
         
         __block PRXAudioPlayer *p = self; 
         self.reach.reachableBlock = ^(Reachability *r) {
+            PRXLog(@"REACHABLE");
             [p didEndBufferInterruption];
         };
+        self.reach.unreachableBlock = ^(Reachability *r) {
+            PRXLog(@"UNREACHABLE");
+        };
+
         
         if (manageSession) {
             NSError *setCategoryError = nil;
@@ -352,7 +357,8 @@ static PRXAudioPlayer* sharedPlayerInstance;
         } else if (self.player.currentItem.status == AVPlayerStatusFailed) {
             PRXLog(@"Player status failed %@", self.player.currentItem.error);
             // the AVPlayer has trouble switching from stream to file and vice versa
-            // if we get an error condition, start over playing the thing it tried to play
+            // if we get an error condition, start over playing the thing it tried to play.
+            // Once a player fails it can't be used for playback anymore!
             waitingForPlayableToBeReadyForPlayback = NO;
             NSObject<PRXPlayable> *tmp = self.currentPlayable;
             [self stop];
@@ -362,8 +368,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
 }
 
 - (void) playerItemBufferEmptied:(NSDictionary*)change {
-    
-    if ([self.reach isReachable]) { // reload current playable and try again
+    if (self.reach.isReachable) { // reload current playable and try again
         [self reloadAndPlayPlayable:self.currentPlayable];
     } else {  // set up state for when network reconnects
         [self didBeginBufferInterruption];
@@ -516,7 +521,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
 #pragma mark Reachability Interruption
 
 - (void) didBeginBufferInterruption {
-    PRXLog(@"Audio session has been interrupted...");
+    PRXLog(@"Audio session has been interrupted, buffer became empty...");
     dateWhenBufferEmptied = NSDate.date;
     playableWhenBufferEmptied = self.currentPlayable; 
 }

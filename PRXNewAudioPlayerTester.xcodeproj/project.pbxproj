@@ -18,6 +18,15 @@
 		B325115316D3D039006D18CF /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B325115216D3D039006D18CF /* Default-568h@2x.png */; };
 		B325115616D3D039006D18CF /* APViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B325115516D3D039006D18CF /* APViewController.m */; };
 		B325115916D3D039006D18CF /* APViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = B325115716D3D039006D18CF /* APViewController.xib */; };
+		B325116216D3D098006D18CF /* PRXAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = B325116116D3D098006D18CF /* PRXAudioPlayer.m */; };
+		B325116416D3D36A006D18CF /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B325116316D3D36A006D18CF /* AVFoundation.framework */; };
+		B325116716D3DDDF006D18CF /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B325116616D3DDDF006D18CF /* MediaPlayer.framework */; };
+		B325119D16D3E95E006D18CF /* Reachability.m in Sources */ = {isa = PBXBuildFile; fileRef = B325118C16D3E95E006D18CF /* Reachability.m */; };
+		B32511A816D3F50E006D18CF /* PRXQueueAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = B32511A716D3F50E006D18CF /* PRXQueueAudioPlayer.m */; };
+		B32511AB16D3F667006D18CF /* PRXAudioQueue.m in Sources */ = {isa = PBXBuildFile; fileRef = B32511AA16D3F667006D18CF /* PRXAudioQueue.m */; };
+		B32511AE16D419EC006D18CF /* APEpisode.m in Sources */ = {isa = PBXBuildFile; fileRef = B32511AD16D419EC006D18CF /* APEpisode.m */; };
+		B32511B016D41CC1006D18CF /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B32511AF16D41CC1006D18CF /* CoreMedia.framework */; };
+		B32511B216D41CD1006D18CF /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B32511B116D41CD1006D18CF /* SystemConfiguration.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +46,21 @@
 		B325115416D3D039006D18CF /* APViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = APViewController.h; sourceTree = "<group>"; };
 		B325115516D3D039006D18CF /* APViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = APViewController.m; sourceTree = "<group>"; };
 		B325115816D3D039006D18CF /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = en.lproj/APViewController.xib; sourceTree = "<group>"; };
+		B325116016D3D098006D18CF /* PRXAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PRXAudioPlayer.h; sourceTree = "<group>"; };
+		B325116116D3D098006D18CF /* PRXAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PRXAudioPlayer.m; sourceTree = "<group>"; };
+		B325116316D3D36A006D18CF /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		B325116516D3D7D4006D18CF /* PRXAudioPlayer_private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PRXAudioPlayer_private.h; sourceTree = "<group>"; };
+		B325116616D3DDDF006D18CF /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
+		B325118B16D3E95E006D18CF /* Reachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Reachability.h; sourceTree = "<group>"; };
+		B325118C16D3E95E006D18CF /* Reachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Reachability.m; sourceTree = "<group>"; };
+		B32511A616D3F50E006D18CF /* PRXQueueAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PRXQueueAudioPlayer.h; sourceTree = "<group>"; };
+		B32511A716D3F50E006D18CF /* PRXQueueAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PRXQueueAudioPlayer.m; sourceTree = "<group>"; };
+		B32511A916D3F667006D18CF /* PRXAudioQueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PRXAudioQueue.h; sourceTree = "<group>"; };
+		B32511AA16D3F667006D18CF /* PRXAudioQueue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PRXAudioQueue.m; sourceTree = "<group>"; };
+		B32511AC16D419EC006D18CF /* APEpisode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = APEpisode.h; sourceTree = "<group>"; };
+		B32511AD16D419EC006D18CF /* APEpisode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = APEpisode.m; sourceTree = "<group>"; };
+		B32511AF16D41CC1006D18CF /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		B32511B116D41CD1006D18CF /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,6 +68,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B32511B216D41CD1006D18CF /* SystemConfiguration.framework in Frameworks */,
+				B32511B016D41CC1006D18CF /* CoreMedia.framework in Frameworks */,
+				B325116716D3DDDF006D18CF /* MediaPlayer.framework in Frameworks */,
+				B325116416D3D36A006D18CF /* AVFoundation.framework in Frameworks */,
 				B325113D16D3D039006D18CF /* UIKit.framework in Frameworks */,
 				B325113F16D3D039006D18CF /* Foundation.framework in Frameworks */,
 				B325114116D3D039006D18CF /* CoreGraphics.framework in Frameworks */,
@@ -56,7 +84,9 @@
 		B325113016D3D039006D18CF = {
 			isa = PBXGroup;
 			children = (
+				B325116816D3E95E006D18CF /* Reachability-master */,
 				B325114216D3D039006D18CF /* PRXNewAudioPlayerTester */,
+				B325115F16D3D067006D18CF /* PRXAudioPlayer */,
 				B325113B16D3D039006D18CF /* Frameworks */,
 				B325113A16D3D039006D18CF /* Products */,
 			);
@@ -73,6 +103,10 @@
 		B325113B16D3D039006D18CF /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				B32511B116D41CD1006D18CF /* SystemConfiguration.framework */,
+				B32511AF16D41CC1006D18CF /* CoreMedia.framework */,
+				B325116616D3DDDF006D18CF /* MediaPlayer.framework */,
+				B325116316D3D36A006D18CF /* AVFoundation.framework */,
 				B325113C16D3D039006D18CF /* UIKit.framework */,
 				B325113E16D3D039006D18CF /* Foundation.framework */,
 				B325114016D3D039006D18CF /* CoreGraphics.framework */,
@@ -89,6 +123,8 @@
 				B325115516D3D039006D18CF /* APViewController.m */,
 				B325115716D3D039006D18CF /* APViewController.xib */,
 				B325114316D3D039006D18CF /* Supporting Files */,
+				B32511AC16D419EC006D18CF /* APEpisode.h */,
+				B32511AD16D419EC006D18CF /* APEpisode.m */,
 			);
 			path = PRXNewAudioPlayerTester;
 			sourceTree = "<group>";
@@ -105,6 +141,31 @@
 				B325115216D3D039006D18CF /* Default-568h@2x.png */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		B325115F16D3D067006D18CF /* PRXAudioPlayer */ = {
+			isa = PBXGroup;
+			children = (
+				B325116016D3D098006D18CF /* PRXAudioPlayer.h */,
+				B325116116D3D098006D18CF /* PRXAudioPlayer.m */,
+				B325116516D3D7D4006D18CF /* PRXAudioPlayer_private.h */,
+				B32511A616D3F50E006D18CF /* PRXQueueAudioPlayer.h */,
+				B32511A716D3F50E006D18CF /* PRXQueueAudioPlayer.m */,
+				B32511A916D3F667006D18CF /* PRXAudioQueue.h */,
+				B32511AA16D3F667006D18CF /* PRXAudioQueue.m */,
+			);
+			name = PRXAudioPlayer;
+			path = PRXNewAudioPlayerTester/PRXAudioPlayer;
+			sourceTree = "<group>";
+		};
+		B325116816D3E95E006D18CF /* Reachability-master */ = {
+			isa = PBXGroup;
+			children = (
+				B325118B16D3E95E006D18CF /* Reachability.h */,
+				B325118C16D3E95E006D18CF /* Reachability.m */,
+			);
+			name = "Reachability-master";
+			path = "PRXNewAudioPlayerTester/Reachability-master";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -177,6 +238,11 @@
 				B325114916D3D039006D18CF /* main.m in Sources */,
 				B325114D16D3D039006D18CF /* APAppDelegate.m in Sources */,
 				B325115616D3D039006D18CF /* APViewController.m in Sources */,
+				B325116216D3D098006D18CF /* PRXAudioPlayer.m in Sources */,
+				B325119D16D3E95E006D18CF /* Reachability.m in Sources */,
+				B32511A816D3F50E006D18CF /* PRXQueueAudioPlayer.m in Sources */,
+				B32511AB16D3F667006D18CF /* PRXAudioQueue.m in Sources */,
+				B32511AE16D419EC006D18CF /* APEpisode.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

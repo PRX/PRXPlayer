@@ -7,7 +7,14 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "APEpisode.h"
 
 @interface APViewController : UIViewController
+
+
+
+- (IBAction)playRemixStreamPressed:(id)sender;
+- (IBAction)play99PercentPressed:(id)sender;
+- (IBAction)playWBURStream:(id)sender; 
 
 @end

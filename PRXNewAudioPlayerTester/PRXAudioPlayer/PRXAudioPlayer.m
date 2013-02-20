@@ -42,7 +42,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
 #pragma mark - General player interface
 #pragma mark Setup
 
-- (id)init {
+- (id) init {
     self = [super init];
     if (self) {
         _observers = [NSMutableArray array];
@@ -59,7 +59,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     return self;
 }
 
-- (void)setPlayer:(AVPlayer*)player {
+- (void) setPlayer:(AVPlayer*)player {
     [self stopObservingPlayer:self.player];
     
     _player = player;
@@ -67,7 +67,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     [self observePlayer:self.player];
 }
 
-- (void)setCurrentPlayable:(NSObject<PRXPlayable> *)playable {
+- (void) setCurrentPlayable:(NSObject<PRXPlayable> *)playable {
     if (![self isCurrentPlayable:playable]) {
         [self currentPlayableWillChange];
         
@@ -80,11 +80,11 @@ static PRXAudioPlayer* sharedPlayerInstance;
     }
 }
 
-- (BOOL)isCurrentPlayable:(NSObject<PRXPlayable> *)playable {
+- (BOOL) isCurrentPlayable:(NSObject<PRXPlayable> *)playable {
     return [playable isEqualToPlayable:self.currentPlayable];
 }
 
-- (void)setCurrentPlayerItem:(AVPlayerItem*)currentPlayerItem {
+- (void) setCurrentPlayerItem:(AVPlayerItem*)currentPlayerItem {
     [self stopObservingPlayerItem:self.currentPlayerItem];
     
     _currentPlayerItem = currentPlayerItem;
@@ -100,7 +100,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     [self observePlayerItem:self.currentPlayerItem];
 }
 
-- (void)setCurrentURLAsset:(AVURLAsset*)currentURLAsset {
+- (void) setCurrentURLAsset:(AVURLAsset*)currentURLAsset {
     _currentURLAsset = currentURLAsset;
     [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
     
@@ -120,11 +120,11 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 #pragma mark Exposure
 
-- (AVPlayerItem*)playerItem {
+- (AVPlayerItem*) playerItem {
     return self.currentPlayerItem;
 }
 
-- (float)buffer {
+- (float) buffer {
     CMTimeRange tr;
     [[self.player.currentItem.loadedTimeRanges lastObject] getValue:&tr];
     
@@ -134,11 +134,11 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 #pragma mark Asynchronous loading callbacks
 
-- (void)didLoadTracksForAsset:(AVURLAsset*)asset {
+- (void) didLoadTracksForAsset:(AVURLAsset*)asset {
     self.currentPlayerItem = [AVPlayerItem playerItemWithAsset:asset];
 }
 
-- (void)failedToLoadTracksForAsset:(AVURLAsset*)asset {
+- (void) failedToLoadTracksForAsset:(AVURLAsset*)asset {
     // loading the tracks using a player url asset is more reliable and has already been tried
     // by the time we get here.  but if it fails we can still try to set the player item directly. 
     self.currentPlayerItem = [AVPlayerItem playerItemWithURL:self.currentPlayable.audioURL];
@@ -146,7 +146,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 #pragma mark Controls
 
-- (void)loadPlayable:(NSObject<PRXPlayable> *)playable {
+- (void) loadPlayable:(NSObject<PRXPlayable> *)playable {
     holdPlayback = YES;
     if (![self isCurrentPlayable:playable]) {
         waitingForPlayableToBeReadyForPlayback = NO;
@@ -154,7 +154,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     [self loadAndPlayPlayable:playable];
 }
 
-- (void)playPlayable:(NSObject<PRXPlayable> *)playable {
+- (void) playPlayable:(NSObject<PRXPlayable> *)playable {
     holdPlayback = NO;
     if (![self isCurrentPlayable:playable]) { 
         waitingForPlayableToBeReadyForPlayback = NO;
@@ -169,7 +169,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     return 0.0f; 
 }
 
-- (void)loadAndPlayPlayable:(id<PRXPlayable>)playable {
+- (void) loadAndPlayPlayable:(id<PRXPlayable>)playable {
     if ([self isCurrentPlayable:playable] && ![self.currentURLAsset.URL isEqual:playable.audioURL]) {
         PRXLog(@"Switching to stream or local file because other is no longer available");
         PRXLog(@"%@ %@", self.currentURLAsset, playable.audioURL);  
@@ -213,23 +213,22 @@ static PRXAudioPlayer* sharedPlayerInstance;
     }
 }
 
-- (void) reloadAndPlayPlayable:(NSObject<PRXPlayable> *)playable
-{
+- (void) reloadAndPlayPlayable:(NSObject<PRXPlayable> *)playable {
     [self stop];
     [self loadAndPlayPlayable:playable]; 
 }
 
-- (void)play {
+- (void) play {
     if (self.currentPlayable) {
         [self loadAndPlayPlayable:self.currentPlayable];
     }
 }
 
-- (void)pause {
+- (void) pause {
     self.player.rate = 0.0f;
 }
 
-- (void)togglePlayPause {
+- (void) togglePlayPause {
     if (self.player.rate > 0.0f) {
         [self pause];
     } else {
@@ -237,7 +236,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     }
 }
 
-- (void)stop {
+- (void) stop {
     self.currentPlayerItem = nil;
     self.currentURLAsset = nil;
     self.player = nil;
@@ -245,23 +244,23 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 #pragma mark Target playback rates
 
-- (float)rateForFilePlayback {
+- (float) rateForFilePlayback {
     return 1.0f;
 }
 
-- (float)rateForPlayback {
+- (float) rateForPlayback {
     return (self.currentPlayerItem.duration.value > 0 ? self.rateForFilePlayback : 1.0f);
 }
 
 #pragma mark Soft end
 
-- (float)softEndBoundaryProgress {
+- (float) softEndBoundaryProgress {
     return 0.95f;
 }
 
 #pragma mark Callbacks
 
-- (void)observeValueForKeyPath:(NSString*)keyPath ofObject:(id)object change:(NSDictionary*)change context:(void*)context {
+- (void) observeValueForKeyPath:(NSString*)keyPath ofObject:(id)object change:(NSDictionary*)change context:(void*)context {
     if (context == &PlayerStatusContext) {
         [self playerStatusDidChange:change];
         return;
@@ -285,7 +284,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
 }
 
 
-- (void)currentPlayableWillChange {
+- (void) currentPlayableWillChange {
     if (self.currentPlayable) {
         [self pause];
         [self removeNonPersistentObservers:YES];
@@ -293,19 +292,19 @@ static PRXAudioPlayer* sharedPlayerInstance;
     }
 }
 
-- (void)playerStatusDidChange:(NSDictionary*)change {
+- (void) playerStatusDidChange:(NSDictionary*)change {
     [self reportPlayerStatusChangeToObservers];
 }
 
-- (void)playerRateDidChange:(NSDictionary*)change {    
+- (void) playerRateDidChange:(NSDictionary*)change {    
     [self reportPlayerStatusChangeToObservers];
 }
 
-- (void)playerErrorDidChange:(NSDictionary*)change {
+- (void) playerErrorDidChange:(NSDictionary*)change {
     [self reportPlayerStatusChangeToObservers];
 }
 
-- (void)playerItemStatusDidChange:(NSDictionary*)change {
+- (void) playerItemStatusDidChange:(NSDictionary*)change {
     PRXLog(@"Player item status did change to %@", change); 
     [self reportPlayerStatusChangeToObservers];
     if ([change[@"kind"] integerValue] == 1) {
@@ -327,7 +326,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     }
 }
 
-- (void)playerItemBufferEmptied:(NSDictionary*)change {
+- (void) playerItemBufferEmptied:(NSDictionary*)change {
     
     if ([self.reach isReachable]) { // reload current playable and try again
         [self reloadAndPlayPlayable:self.currentPlayable];
@@ -336,11 +335,11 @@ static PRXAudioPlayer* sharedPlayerInstance;
     }
 }
 
-- (void)playerPeriodicTimeObserverAction {
+- (void) playerPeriodicTimeObserverAction {
     [self reportPlayerTimeIntervalToObservers];
 }
 
-- (void)playerLongPeriodicTimeObserverAction {
+- (void) playerLongPeriodicTimeObserverAction {
     NSTimeInterval since = [lastLongPeriodicTimeObserverAction timeIntervalSinceNow];
     
     if (ABS(since) > LongPeriodicTimeObserver || !lastLongPeriodicTimeObserverAction) {
@@ -348,20 +347,20 @@ static PRXAudioPlayer* sharedPlayerInstance;
     }
 }
 
-- (void)playerSoftEndBoundaryTimeObserverAction {
+- (void) playerSoftEndBoundaryTimeObserverAction {
 }
 
-- (void)playerItemDidPlayToEndTime:(NSNotification*)notification {
+- (void) playerItemDidPlayToEndTime:(NSNotification*)notification {
     [self reportPlayerStatusChangeToObservers];
 }
 
-- (void)playerItemDidJumpTime:(NSNotification*)notification {
+- (void) playerItemDidJumpTime:(NSNotification*)notification {
     [self reportPlayerTimeIntervalToObservers];
 }
 
 #pragma mark Internal observers
 
-- (void)observePlayer:(AVPlayer*)player {
+- (void) observePlayer:(AVPlayer*)player {
     [player addObserver:self forKeyPath:@"status" options:0 context:&PlayerStatusContext];
     [player addObserver:self forKeyPath:@"rate" options:0 context:&PlayerRateContext];
     [player addObserver:self forKeyPath:@"error" options:0 context:&PlayerRateContext];
@@ -375,7 +374,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     }];
 }
 
-- (void)stopObservingPlayer:(AVPlayer*)player {
+- (void) stopObservingPlayer:(AVPlayer*)player {
     [player removeObserver:self forKeyPath:@"status"];
     [player removeObserver:self forKeyPath:@"rate"];
     [player removeObserver:self forKeyPath:@"error"];
@@ -384,7 +383,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     [player removeTimeObserver:playerLongPeriodicTimeObserver];
 }
 
-- (void)observePlayerItem:(AVPlayerItem*)playerItem {
+- (void) observePlayerItem:(AVPlayerItem*)playerItem {
     [playerItem addObserver:self forKeyPath:@"status" options:0 context:&PlayerItemStatusContext];
     [playerItem addObserver:self forKeyPath:@"playbackBufferEmpty" options:0 context:&PlayerItemBufferEmptyContext];
     
@@ -399,7 +398,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
                                                object:playerItem];
 }
 
-- (void)stopObservingPlayerItem:(AVPlayerItem*)playerItem {
+- (void) stopObservingPlayerItem:(AVPlayerItem*)playerItem {
     [playerItem removeObserver:self forKeyPath:@"status"];
     
     [[NSNotificationCenter defaultCenter] removeObserver:self
@@ -409,7 +408,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 #pragma mark External observers
 
-- (id)addObserver:(id<PRXAudioPlayerObserver>)observer persistent:(BOOL)persistent {
+- (id) addObserver:(id<PRXAudioPlayerObserver>)observer persistent:(BOOL)persistent {
     if (![self isBeingObservedBy:observer]) {
         NSNumber* _persistent = @(persistent);
         NSDictionary* dict = @{ @"obj":observer, @"persist":_persistent };
@@ -422,7 +421,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     return @"YES";
 }
 
-- (void)removeObserver:(id<PRXAudioPlayerObserver>)observer {
+- (void) removeObserver:(id<PRXAudioPlayerObserver>)observer {
     NSMutableArray* discardItems = [NSMutableArray array];
     
     for (NSDictionary* dict in _observers) {
@@ -436,7 +435,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     _observers = [NSArray arrayWithArray:mArr];
 }
 
-- (BOOL)isBeingObservedBy:(id<PRXAudioPlayerObserver>)observer {
+- (BOOL) isBeingObservedBy:(id<PRXAudioPlayerObserver>)observer {
     for (NSDictionary* dict in _observers) {
         if ([dict[@"obj"] isEqual:observer]) {
             return YES;
@@ -445,7 +444,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     return NO;
 }
 
-- (void)removeNonPersistentObservers:(BOOL)rerun {
+- (void) removeNonPersistentObservers:(BOOL)rerun {
     NSMutableArray* discardItems = [NSMutableArray array];
     
     for (NSDictionary* dict in _observers) {
@@ -465,14 +464,14 @@ static PRXAudioPlayer* sharedPlayerInstance;
     _observers = [NSArray arrayWithArray:mArr];
 }
 
-- (void)reportPlayerStatusChangeToObservers {
+- (void) reportPlayerStatusChangeToObservers {
     for (NSDictionary* dict in _observers) {
         id<PRXAudioPlayerObserver> observer = dict[@"obj"];
         [observer observedPlayerStatusDidChange:self.player];
     }
 }
 
-- (void)reportPlayerTimeIntervalToObservers {
+- (void) reportPlayerTimeIntervalToObservers {
     for (NSDictionary* dict in _observers) {
         id<PRXAudioPlayerObserver> observer = dict[@"obj"];
         [observer observedPlayerDidObservePeriodicTimeInterval:self.player];
@@ -508,7 +507,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 #pragma mark Audio Session Interruption
 
-- (void)audioSessionInterruption:(NSNotification*)notification {
+- (void) audioSessionInterruption:(NSNotification*)notification {
     if ([notification.userInfo[AVAudioSessionInterruptionTypeKey] isEqual:@(AVAudioSessionInterruptionTypeBegan)]) {
         [self audioSessionDidBeginInterruption:notification];
     } else if ([notification.userInfo[AVAudioSessionInterruptionTypeKey] isEqual:@(AVAudioSessionInterruptionTypeEnded)]) {
@@ -516,13 +515,13 @@ static PRXAudioPlayer* sharedPlayerInstance;
     }
 }
 
-- (void)audioSessionDidBeginInterruption:(NSNotification*)notification {
+- (void) audioSessionDidBeginInterruption:(NSNotification*)notification {
     PRXLog(@"Audio session has been interrupted...");
     rateWhenAudioSessionDidBeginInterruption = self.player.rate;
     dateWhenAudioSessionDidBeginInterruption = NSDate.date;
 }
 
-- (void)audioSessionDidEndInterruption:(NSNotification*)notification {
+- (void) audioSessionDidEndInterruption:(NSNotification*)notification {
     NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateWhenAudioSessionDidBeginInterruption];
     float interruptLimit = self.interruptResumeTimeLimit;
     PRXLog(@"[KRT][Audio] Audio session has returned from interruption after %f seconds. User limit is %f seconds.", intervalSinceInterrupt, interruptLimit);
@@ -539,23 +538,22 @@ static PRXAudioPlayer* sharedPlayerInstance;
     dateWhenAudioSessionDidBeginInterruption = nil;
 }
 
-- (NSTimeInterval) interruptResumeTimeLimit;
-{
+- (NSTimeInterval) interruptResumeTimeLimit {
     return 300;
 }
 
 #pragma mark - Remote control
 
-- (BOOL)canBecomeFirstResponder {
+- (BOOL) canBecomeFirstResponder {
     return YES;
 }
 
-- (BOOL)becomeFirstResponder {
+- (BOOL) becomeFirstResponder {
 	[super becomeFirstResponder];
 	return YES;
 }
 
-- (NSDictionary*)MPNowPlayingInfoCenterNowPlayingInfo {
+- (NSDictionary*) MPNowPlayingInfoCenterNowPlayingInfo {
     NSMutableDictionary *info;
     if (self.currentPlayable && self.currentPlayable.mediaItemProperties) {
         info = self.currentPlayable.mediaItemProperties.mutableCopy;
@@ -591,15 +589,15 @@ static PRXAudioPlayer* sharedPlayerInstance;
     return info; 
 }
 
-- (NSString *)defaultNowPlayingArtist {
+- (NSString *) defaultNowPlayingArtist {
     return @"PRXAudioPlayer"; 
 }
 
-- (void)setMPNowPlayingInfoCenterNowPlayingInfo {
+- (void) setMPNowPlayingInfoCenterNowPlayingInfo {
     MPNowPlayingInfoCenter.defaultCenter.nowPlayingInfo = self.MPNowPlayingInfoCenterNowPlayingInfo;
 }
 
-- (void)remoteControlReceivedWithEvent:(UIEvent*)event {
+- (void) remoteControlReceivedWithEvent:(UIEvent*)event {
 	switch (event.subtype) {
 		case UIEventSubtypeNone:
 			break;
@@ -633,6 +631,5 @@ static PRXAudioPlayer* sharedPlayerInstance;
 			break;
 	}
 }
-
 
 @end

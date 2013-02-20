@@ -53,8 +53,8 @@
 @property (nonatomic, readonly) float buffer;
 @property (nonatomic, strong, readonly) NSArray *observers;
 
-- (void)playPlayable:(id<PRXPlayable>)playable;
-- (float)rateForPlayable:(id<PRXPlayable>)playable;
+- (void) playPlayable:(id<PRXPlayable>)playable;
+- (float) rateForPlayable:(id<PRXPlayable>)playable;
 
 - (void) play;
 - (void) pause;

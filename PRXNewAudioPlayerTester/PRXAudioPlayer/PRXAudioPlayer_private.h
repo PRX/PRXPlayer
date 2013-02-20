@@ -28,41 +28,41 @@ extern float LongPeriodicTimeObserver;
 @property (nonatomic, readonly) BOOL allowsPlaybackViaWWAN;
 @property (nonatomic, readonly) NSTimeInterval interruptResumeTimeLimit; 
 
-- (void)loadAndPlayPlayable:(id<PRXPlayable>)playable;
+- (void) loadAndPlayPlayable:(id<PRXPlayable>)playable;
 
 - (void) currentPlayableWillChange;
-- (void)playerStatusDidChange:(NSDictionary*)change;
-- (void)playerRateDidChange:(NSDictionary*)change;
-- (void)playerErrorDidChange:(NSDictionary*)change;
-- (void)playerItemStatusDidChange:(NSDictionary*)change;
-- (void)playerItemBufferEmptied:(NSDictionary*)change;
-- (void)playerPeriodicTimeObserverAction;
-- (void)playerLongPeriodicTimeObserverAction;
-- (void)playerSoftEndBoundaryTimeObserverAction;
-- (void)playerItemDidPlayToEndTime:(NSNotification*)notification;
-- (void)playerItemDidJumpTime:(NSNotification*)notification;
+- (void) playerStatusDidChange:(NSDictionary*)change;
+- (void) playerRateDidChange:(NSDictionary*)change;
+- (void) playerErrorDidChange:(NSDictionary*)change;
+- (void) playerItemStatusDidChange:(NSDictionary*)change;
+- (void) playerItemBufferEmptied:(NSDictionary*)change;
+- (void) playerPeriodicTimeObserverAction;
+- (void) playerLongPeriodicTimeObserverAction;
+- (void) playerSoftEndBoundaryTimeObserverAction;
+- (void) playerItemDidPlayToEndTime:(NSNotification*)notification;
+- (void) playerItemDidJumpTime:(NSNotification*)notification;
 
-- (void)audioSessionDidBeginInterruption:(NSNotification*)notification;
-- (void)audioSessionDidEndInterruption:(NSNotification*)notification;
-- (void)audioSessionInterruption:(NSNotification*)notification;
+- (void) audioSessionDidBeginInterruption:(NSNotification*)notification;
+- (void) audioSessionDidEndInterruption:(NSNotification*)notification;
+- (void) audioSessionInterruption:(NSNotification*)notification;
 
 - (void) didBeginBufferInterruption;
 - (void) didEndBufferInterruption; 
 
-- (void)observePlayer:(AVPlayer*)player;
-- (void)stopObservingPlayer:(AVPlayer*)player;
+- (void) observePlayer:(AVPlayer*)player;
+- (void) stopObservingPlayer:(AVPlayer*)player;
 
-- (void)observePlayerItem:(AVPlayerItem*)playerItem;
-- (void)stopObservingPlayerItem:(AVPlayerItem*)playerItem;
+- (void) observePlayerItem:(AVPlayerItem*)playerItem;
+- (void) stopObservingPlayerItem:(AVPlayerItem*)playerItem;
 
-- (BOOL)isBeingObservedBy:(id<PRXAudioPlayerObserver>)observer;
-- (void)removeNonPersistentObservers:(BOOL)rerun;
+- (BOOL) isBeingObservedBy:(id<PRXAudioPlayerObserver>)observer;
+- (void) removeNonPersistentObservers:(BOOL)rerun;
 
-- (void)reportPlayerStatusChangeToObservers;
-- (void)reportPlayerTimeIntervalToObservers;
+- (void) reportPlayerStatusChangeToObservers;
+- (void) reportPlayerTimeIntervalToObservers;
 
-- (NSDictionary*)MPNowPlayingInfoCenterNowPlayingInfo;
-- (void)setMPNowPlayingInfoCenterNowPlayingInfo;
-- (NSString *)defaultNowPlayingArtist;
+- (NSDictionary*) MPNowPlayingInfoCenterNowPlayingInfo;
+- (void) setMPNowPlayingInfoCenterNowPlayingInfo;
+- (NSString *) defaultNowPlayingArtist;
 
 @end

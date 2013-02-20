@@ -45,6 +45,7 @@
 }
 
 + (PRXAudioPlayer *)sharedPlayer;
+- (id) initWithAudioSessionManagement:(BOOL)manageSession;
 
 @property (nonatomic, strong) NSObject<PRXPlayable> *currentPlayable; 
 @property (nonatomic, strong) AVPlayer *player;

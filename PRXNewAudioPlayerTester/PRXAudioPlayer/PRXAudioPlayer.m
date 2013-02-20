@@ -43,6 +43,10 @@ static PRXAudioPlayer* sharedPlayerInstance;
 #pragma mark Setup
 
 - (id) init {
+    return [self initWithAudioSessionManagement:YES]; 
+}
+
+- (id) initWithAudioSessionManagement:(BOOL)manageSession {
     self = [super init];
     if (self) {
         _observers = [NSMutableArray array];
@@ -55,19 +59,21 @@ static PRXAudioPlayer* sharedPlayerInstance;
         self.reach.reachableBlock = ^(Reachability *r) {
             [p didEndBufferInterruption];
         };
-        NSError *setCategoryError = nil;
-        BOOL success = [[AVAudioSession sharedInstance]
+        if (manageSession) {
+            NSError *setCategoryError = nil;
+            BOOL success = [[AVAudioSession sharedInstance]
                         setCategory: AVAudioSessionCategoryAmbient
                         error: &setCategoryError];
         
-        if (!success) { /* handle the error in setCategoryError */ }
-        NSError *activationError = nil;
-        success = [[AVAudioSession sharedInstance] setActive: YES error: &activationError];
-        if (!success) { /* handle the error in activationError */ }
+            if (!success) { /* handle the error in setCategoryError */ }
+            NSError *activationError = nil;
+            success = [[AVAudioSession sharedInstance] setActive: YES error: &activationError];
+            if (!success) { /* handle the error in activationError */ }
         
-        [[AVAudioSession sharedInstance] setDelegate:self]; 
-
-
+            if ([[[UIDevice currentDevice] systemVersion] floatValue] < 6.0) {
+                [[AVAudioSession sharedInstance] setDelegate:self];
+            }
+        }
     }
     return self;
 }

@@ -11,8 +11,6 @@
 
 @implementation PRXQueueAudioPlayer
 
-- (BOOL) hasNext;
-{
 - (void)loadAndPlayPlayable:(id<PRXPlayable>)playable {
   if ([self queueContainsPlayable:playable]) {
     self.queue.cursor = [self nextQueuePositionForObject:playable];
@@ -75,8 +73,7 @@
     }
 }
 
-- (void) playQueuePosition:(NSUInteger)position
-{
+- (void) playQueuePosition:(NSUInteger)position {
     if ([self hasQueuePosition:position]) {
         [self moveToQueuePosition:position];
         [self loadAndPlayPlayable:self.queue[self.queue.cursor]];

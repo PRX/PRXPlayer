@@ -40,7 +40,7 @@
 - (int) firstQueuePositionForObject:(id<PRXPlayable>)playable;
 - (int) nextQueuePositionForObject:(id<PRXPlayable>)playable;
 - (NSIndexSet *) allQueuePositionsForObject:(id<PRXPlayable>)playable;
-- (id<PRXPlayable>)playableAtCurrentQueuePosition;
-- (id<PRXPlayable>)playableAtQueuePosition:(NSUInteger)position;
+- (id<PRXPlayable>) playableAtCurrentQueuePosition;
+- (id<PRXPlayable>) playableAtQueuePosition:(NSUInteger)position;
 
 @end

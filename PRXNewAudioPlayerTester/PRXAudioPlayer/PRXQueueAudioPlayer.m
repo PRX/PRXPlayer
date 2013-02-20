@@ -18,6 +18,7 @@
   } else {
     PRXLog(@"Adding episode to queue and playing (or holding).");
     [self enqueueAfterCurrentPosition:playable];
+    [self loadAndPlayPlayable:playable];
   }
 }
 

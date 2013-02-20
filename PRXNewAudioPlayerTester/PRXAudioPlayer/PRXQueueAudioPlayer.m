@@ -11,15 +11,36 @@
 
 @implementation PRXQueueAudioPlayer
 
+static PRXQueueAudioPlayer* sharedPlayerInstance;
+
++ (PRXQueueAudioPlayer*)sharedPlayer {
+    @synchronized(self) {
+        if (sharedPlayerInstance == nil) {
+            sharedPlayerInstance = [[self alloc] init];
+        }
+    }
+    
+    return sharedPlayerInstance;
+}
+
+- (id)init {
+    self = [super init];
+    if (self) {
+        _queue = [[PRXAudioQueue alloc] init];
+    }
+    return self;
+}
+
 - (void) loadAndPlayPlayable:(id<PRXPlayable>)playable {
-  if ([self queueContainsPlayable:playable]) {
-    self.queue.cursor = [self nextQueuePositionForObject:playable];
-    [super loadAndPlayPlayable:playable];
-  } else {
-    PRXLog(@"Adding episode to queue and playing (or holding).");
-    [self enqueueAfterCurrentPosition:playable];
-    [self loadAndPlayPlayable:playable];
-  }
+    if ([self queueContainsPlayable:playable]) {
+        PRXLog(@"Queue contains playable, passing along.");
+        self.queue.cursor = [self nextQueuePositionForObject:playable];
+        [super loadAndPlayPlayable:playable];
+    } else {
+        PRXLog(@"Adding episode to queue and playing (or holding).");
+        [self enqueueAfterCurrentPosition:playable];
+        [self loadAndPlayPlayable:playable];
+    }
 }
 
 - (void) play {
@@ -90,7 +111,8 @@
 }
 
 - (void) enqueueAfterCurrentPosition:(id<PRXPlayable>)playable {
-    [self.queue insertObject:playable atIndex:self.queue.cursor + 1];
+    int position = (self.queue.count == 0 ? 0 : (self.queue.cursor + 1));
+    [self.queue insertObject:playable atIndex:position];
 }
 
 - (void) dequeue:(id<PRXPlayable>)playable {
@@ -145,9 +167,13 @@
 }
 
 - (BOOL) queueContainsPlayable:(id<PRXPlayable>)playable {
-    return [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable>pl, NSUInteger idx, BOOL *stop) {
+    if (self.queue.count == 0) { return NO; }
+    
+    NSUInteger _idx = [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable>pl, NSUInteger idx, BOOL *stop) {
         return [pl isEqualToPlayable:playable];
-    }] != NSNotFound; 
+    }];
+    
+    return _idx != NSNotFound;
 }
 
 - (int) firstQueuePositionForObject:(id<PRXPlayable>)playable {
@@ -157,9 +183,17 @@
 }
 
 - (int) nextQueuePositionForObject:(id<PRXPlayable>)playable {
-    return [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable> pl, NSUInteger idx, BOOL *stop) {
-        return ([pl isEqualToPlayable:pl] && idx >= self.queue.cursor);
+    NSUInteger _idx;
+    
+    _idx = [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable> pl, NSUInteger idx, BOOL *stop) {
+        return ([pl isEqualToPlayable:playable] && idx >= self.queue.cursor);
     }];
+    
+    if (_idx == NSNotFound) {
+        _idx = [self firstQueuePositionForObject:playable];
+    }
+    
+    return _idx;
 }
 
 - (NSIndexSet *) allQueuePositionsForObject:(id<PRXPlayable>)playable {

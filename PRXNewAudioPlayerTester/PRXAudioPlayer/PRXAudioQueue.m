@@ -12,12 +12,16 @@
 
 @property (nonatomic, strong) NSMutableArray *backingStore;
 
+@property (nonatomic) NSUInteger lastCursor;
+
+- (void) incrementCursor;
+- (void) decrementCursor;
+
 @end
 
 @implementation PRXAudioQueue
 
 - (id) init {
-
     self = [super init];
     if (self) {
         self.backingStore = [NSMutableArray arrayWithCapacity:10];
@@ -26,11 +30,38 @@
     return self;
 }
 
+- (NSUInteger) lastCursor {
+    if (self.count == 0) {
+        return NSNotFound;
+    } else {
+        return (self.count - 1);
+    }
+}
+
 - (void) setCursor:(NSUInteger)cursor {
-    if (cursor < [self.backingStore count] - 1) {
+    if (cursor == NSNotFound) {
+        _cursor = cursor;
+    } else if (cursor <= self.lastCursor) {
         _cursor = cursor;
     }
-    [self notifyDelegate]; 
+    
+    [self notifyDelegate];
+}
+
+- (void) incrementCursor {
+    if (self.cursor == NSNotFound) {
+        self.cursor = 0;
+    } else {
+        self.cursor = self.cursor + 1;
+    }
+}
+
+- (void) decrementCursor {
+    if (self.cursor == 0) {
+        self.cursor = NSNotFound;
+    } else {
+        self.cursor = self.cursor - 1;
+    }
 }
 
 - (BOOL) isEmpty {
@@ -38,25 +69,32 @@
 }
 
 - (void) insertObject:(id)anObject atIndex:(NSUInteger)index {
-    if (index >= [self.backingStore count]) {
-        index = [self.backingStore count]; 
+    if (index >= self.backingStore.count) {
+        index = self.backingStore.count;
     }
+    
     [self.backingStore insertObject:anObject atIndex:index];
-    if (index <= self.cursor) {
-        self.cursor++;
+    
+    if (index <= self.cursor || self.cursor == NSNotFound) {
+        [self incrementCursor];
     }
+    
     [self notifyDelegate]; 
 }
 
 - (void) removeObjectAtIndex:(NSUInteger)index {
-    if (index >= [self.backingStore count]) { return; }
+    if (index >= self.backingStore.count) { return; }
+    
     [self.backingStore removeObjectAtIndex:index];
+    
     if (index < self.cursor) {
-        self.cursor--;
+        [self decrementCursor];
     }
-    if (self.cursor > [self.backingStore count] - 1) {
-        self.cursor--;
+    
+    if (self.cursor > self.lastCursor) {
+        self.cursor = self.lastCursor;
     }
+    
     [self notifyDelegate];
 }
 
@@ -73,9 +111,11 @@
 
 - (void) removeLastObject {
     [self.backingStore removeLastObject];
-    if (self.cursor > [self.backingStore count] - 1) {
-        self.cursor--;
+
+    if (self.cursor > self.lastCursor) {
+        self.cursor = self.lastCursor;
     }
+    
     [self notifyDelegate]; 
 }
 
@@ -89,7 +129,7 @@
 }
 
 - (id) objectAtIndex:(NSUInteger)index {
-    if (index != NSNotFound && index < [self.backingStore count]) {
+    if (index != NSNotFound && index < self.backingStore.count) {
         return [self.backingStore objectAtIndex:index];
     }
     return nil;

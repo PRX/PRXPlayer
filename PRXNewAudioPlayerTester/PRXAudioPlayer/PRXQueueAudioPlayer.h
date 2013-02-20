@@ -11,6 +11,8 @@
 
 @interface PRXQueueAudioPlayer : PRXAudioPlayer<PRXAudioQueueDelegate>
 
++ (PRXQueueAudioPlayer *)sharedPlayer;
+
 @property (strong, nonatomic, readonly) PRXAudioQueue *queue;
 @property (nonatomic, readonly) BOOL hasNext;
 @property (nonatomic, readonly) BOOL hasPrevious;

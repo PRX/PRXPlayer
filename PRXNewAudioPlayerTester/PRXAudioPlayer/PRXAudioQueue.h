@@ -15,6 +15,8 @@
 @property (nonatomic, weak) id<PRXAudioQueueDelegate> delegate;
 @property (nonatomic) NSUInteger cursor;
 
+@property (nonatomic, readonly) BOOL isEmpty;
+
 @end
 
 @protocol PRXAudioQueueDelegate <NSObject>

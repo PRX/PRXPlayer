@@ -32,6 +32,10 @@
     [self notifyDelegate]; 
 }
 
+- (BOOL) isEmpty {
+    return (self.count == 0);
+}
+
 - (void) insertObject:(id)anObject atIndex:(NSUInteger)index {
     if (index >= [self.backingStore count]) {
         index = [self.backingStore count]; 
@@ -83,15 +87,14 @@
     return [self.backingStore count]; 
 }
 
-- (id)objectAtIndex:(NSUInteger)index {
+- (id) objectAtIndex:(NSUInteger)index {
     if (index != NSNotFound && index < [self.backingStore count]) {
         return [self.backingStore objectAtIndex:index];
     }
     return nil;
 }
 
-- (void) notifyDelegate;
-{
+- (void) notifyDelegate {
     if (self.delegate && [self.delegate respondsToSelector:@selector(queueDidChange:)]) {
         [self.delegate queueDidChange:self];
     }

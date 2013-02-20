@@ -319,7 +319,6 @@ static PRXAudioPlayer* sharedPlayerInstance;
     return;
 }
 
-
 - (void) currentPlayableWillChange {
     if (self.currentPlayable) {
         [self pause];

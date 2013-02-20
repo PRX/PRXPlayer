@@ -9,9 +9,13 @@
 #import <UIKit/UIKit.h>
 #import "APEpisode.h"
 
-@interface APViewController : UIViewController
+#import "PRXAudioPlayer.h"
 
+@interface APViewController : UIViewController <PRXAudioPlayerObserver>
 
+@property (nonatomic, strong) IBOutlet UILabel* queueLabel;
+@property (nonatomic, strong) IBOutlet UILabel* timeLabel;
+@property (nonatomic, strong) IBOutlet UILabel* stateLabel;
 
 - (IBAction)playRemixStreamPressed:(id)sender;
 - (IBAction)playWBURStream:(id)sender; 

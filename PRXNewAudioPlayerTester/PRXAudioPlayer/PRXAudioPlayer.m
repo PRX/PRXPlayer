@@ -54,7 +54,20 @@ static PRXAudioPlayer* sharedPlayerInstance;
         __block PRXAudioPlayer *p = self; 
         self.reach.reachableBlock = ^(Reachability *r) {
             [p didEndBufferInterruption];
-        }; 
+        };
+        NSError *setCategoryError = nil;
+        BOOL success = [[AVAudioSession sharedInstance]
+                        setCategory: AVAudioSessionCategoryAmbient
+                        error: &setCategoryError];
+        
+        if (!success) { /* handle the error in setCategoryError */ }
+        NSError *activationError = nil;
+        success = [[AVAudioSession sharedInstance] setActive: YES error: &activationError];
+        if (!success) { /* handle the error in activationError */ }
+        
+        [[AVAudioSession sharedInstance] setDelegate:self]; 
+
+
     }
     return self;
 }
@@ -630,6 +643,26 @@ static PRXAudioPlayer* sharedPlayerInstance;
 		default:
 			break;
 	}
+}
+
+#pragma mark - AVAudioSession Delegate Methods
+
+- (void)beginInterruption {
+    [self audioSessionDidBeginInterruption:nil]; 
+}
+
+- (void)endInterruption {
+    [[AVAudioSession sharedInstance] setActive:YES];
+    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+    [self audioSessionDidEndInterruption:nil];
+}
+
+- (void)endInterruptionWithFlags:(NSUInteger)flags {
+    [self endInterruption];
+}
+
+- (void)inputIsAvailableChanged:(BOOL)isInputAvailable {
+    
 }
 
 @end

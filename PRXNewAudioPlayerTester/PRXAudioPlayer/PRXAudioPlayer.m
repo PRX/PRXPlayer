@@ -110,8 +110,17 @@ static PRXAudioPlayer* sharedPlayerInstance;
     
     if (!self.player) {
         self.player = [AVPlayer playerWithPlayerItem:self.currentPlayerItem];
-        self.player.allowsAirPlayVideo = NO;
-        self.player.allowsExternalPlayback = NO; 
+        
+        float version = UIDevice.currentDevice.systemVersion.floatValue;
+        
+        if (version >= 6.0f) {
+            self.player.allowsExternalPlayback = NO;
+        } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+            self.player.allowsAirPlayVideo = NO;
+#pragma clang diagnostic pop
+        }
     } else {
         [self.player replaceCurrentItemWithPlayerItem:self.currentPlayerItem];
     }

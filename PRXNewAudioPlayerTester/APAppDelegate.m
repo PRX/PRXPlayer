@@ -19,6 +19,18 @@
     self.viewController = [[APViewController alloc] initWithNibName:@"APViewController" bundle:nil];
     self.window.rootViewController = self.viewController;
     [self.window makeKeyAndVisible];
+    
+    
+    NSError *setCategoryError = nil;
+    if (![AVAudioSession.sharedInstance setCategory:AVAudioSessionCategoryPlayback error:&setCategoryError]) {
+        PRXLog(@"[KRT][Warning] *** ! *** Error setting audio session: %@", [setCategoryError localizedDescription]);
+    }
+    
+    NSError* activationError = nil;
+    if (![AVAudioSession.sharedInstance setActive:YES error:&activationError]) {
+        PRXLog(@"[KRT][Warning] *** ! *** Error activating audio session: %@", [activationError localizedDescription]);
+    }
+    
     return YES;
 }
 

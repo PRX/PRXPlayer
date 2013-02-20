@@ -365,6 +365,7 @@
 				B325115E16D3D039006D18CF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

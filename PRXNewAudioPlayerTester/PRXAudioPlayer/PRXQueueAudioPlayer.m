@@ -113,9 +113,19 @@
 
 - (void) movePlayableFromPosition:(NSUInteger)inPosition toPosition:(NSUInteger)outPosition {
     if ([self hasQueuePosition:inPosition] && [self hasQueuePosition:outPosition]) {
+        NSNumber* cursor;
+        
+        if (inPosition == self.queue.cursor) {
+            cursor = @(outPosition);
+        }
+      
         id<PRXPlayable> pl = [self.queue objectAtIndex:inPosition];
         [self.queue removeObjectAtIndex:inPosition];
         [self.queue insertObject:pl atIndex:outPosition];
+        
+        if (cursor) {
+            self.queue.cursor = cursor.integerValue;
+        }
     }
 }
 

@@ -17,14 +17,20 @@
 #define PRXLog(...)
 #endif 
 
+#define SYSTEM_VERSION_EQUAL_TO(v)                  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedSame)
+#define SYSTEM_VERSION_GREATER_THAN(v)              ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedDescending)
+#define SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
+#define SYSTEM_VERSION_LESS_THAN(v)                 ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedAscending)
+#define SYSTEM_VERSION_LESS_THAN_OR_EQUAL_TO(v)     ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedDescending)
+
+
 @protocol PRXPlayable <NSObject>
 
 @property (nonatomic, strong, readonly) NSURL *audioURL;
 @property (nonatomic, strong, readonly) NSDictionary *mediaItemProperties;
 @property (nonatomic) NSTimeInterval playbackCursorPosition;
 @property (nonatomic) NSTimeInterval duration;
-@property (nonatomic, strong, readonly) NSString *displayTitle;
-@property (nonatomic, strong, readonly) NSString *displaySubtitle; 
+@property (nonatomic, strong, readonly) NSDictionary *userInfo; 
 
 - (BOOL) isEqualToPlayable:(id<PRXPlayable>)playable; 
 
@@ -59,7 +65,7 @@
 - (void) playPlayable:(id<PRXPlayable>)playable;
 - (void) loadPlayable:(id<PRXPlayable>)playable; 
 - (float) rateForPlayable:(id<PRXPlayable>)playable;
-- (BOOL) isCurrentPlayable:(NSObject<PRXPlayable> *)playable;
+- (BOOL) isCurrentPlayable:(NSObject<PRXPlayable> *)playable; 
 
 - (void) play;
 - (void) pause;

@@ -58,9 +58,12 @@ static PRXAudioPlayer* sharedPlayerInstance;
         
         [UIApplication.sharedApplication beginReceivingRemoteControlEvents];
         
-        [NSNotificationCenter.defaultCenter addObserver:self
+        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"6.0")) { 
+            [NSNotificationCenter.defaultCenter addObserver:self
                                                selector:@selector(audioSessionInterruption:)
-                                                   name:AVAudioSessionInterruptionNotification object:nil];
+                                                   name:AVAudioSessionInterruptionNotification
+                                                   object:nil];
+        }
         
         _reach = [Reachability reachabilityWithHostname:@"www.google.com"];
         
@@ -88,7 +91,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
             success = [[AVAudioSession sharedInstance] setActive: YES error: &activationError];
             if (!success) { /* handle the error in activationError */ }
         
-            if ([[[UIDevice currentDevice] systemVersion] floatValue] < 6.0) {
+            if (SYSTEM_VERSION_LESS_THAN(@"6.0")) {
                 [[AVAudioSession sharedInstance] setDelegate:self];
             }
         }

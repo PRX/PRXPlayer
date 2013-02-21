@@ -23,6 +23,8 @@
 @property (nonatomic, strong, readonly) NSDictionary *mediaItemProperties;
 @property (nonatomic) NSTimeInterval playbackCursorPosition;
 @property (nonatomic) NSTimeInterval duration;
+@property (nonatomic, strong, readonly) NSString *displayTitle;
+@property (nonatomic, strong, readonly) NSString *displaySubtitle; 
 
 - (BOOL) isEqualToPlayable:(id<PRXPlayable>)playable; 
 
@@ -44,7 +46,7 @@
     NSUInteger retryCount;
 }
 
-+ (PRXAudioPlayer *)sharedPlayer;
++ (id)sharedPlayer;
 - (id) initWithAudioSessionManagement:(BOOL)manageSession;
 
 @property (nonatomic, strong) NSObject<PRXPlayable> *currentPlayable; 
@@ -55,7 +57,9 @@
 @property (nonatomic, strong, readonly) NSArray *observers;
 
 - (void) playPlayable:(id<PRXPlayable>)playable;
+- (void) loadPlayable:(id<PRXPlayable>)playable; 
 - (float) rateForPlayable:(id<PRXPlayable>)playable;
+- (BOOL) isCurrentPlayable:(NSObject<PRXPlayable> *)playable;
 
 - (void) play;
 - (void) pause;

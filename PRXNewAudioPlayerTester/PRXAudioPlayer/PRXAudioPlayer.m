@@ -8,6 +8,8 @@
 
 #import "PRXAudioPlayer.h"
 #import "PRXAudioPlayer_private.h"
+#import <MediaPlayer/MediaPlayer.h>
+#import "Reachability.h"
 
 @implementation PRXAudioPlayer
 
@@ -21,7 +23,7 @@ float LongPeriodicTimeObserver = 10.0f;
 
 static PRXAudioPlayer* sharedPlayerInstance;
 
-+ (PRXAudioPlayer*)sharedPlayer {
++ (id)sharedPlayer {
     @synchronized(self) {
         if (sharedPlayerInstance == nil) {
             sharedPlayerInstance = [[self alloc] init];

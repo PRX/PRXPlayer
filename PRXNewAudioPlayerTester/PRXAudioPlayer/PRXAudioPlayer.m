@@ -242,25 +242,38 @@ static PRXAudioPlayer* sharedPlayerInstance;
             return;
         } else if ([self rateForPlayable:playable] == 0.0f && !waitingForPlayableToBeReadyForPlayback) {
             PRXLog(@"Resume (or start) playing current playable %@", self.currentPlayable.description);
-            CMTime startTime;
             
-            if (self.currentPlayable.duration - self.currentPlayable.playbackCursorPosition < 3.0f) {
-                startTime = CMTimeMake(0, 1);
+            if ([self.currentPlayable respondsToSelector:@selector(playbackCursorPosition)]) { 
+                CMTime startTime;
+            
+                if (self.currentPlayable.duration - self.currentPlayable.playbackCursorPosition < 3.0f) {
+                    startTime = CMTimeMake(0, 1);
+                } else {
+                    startTime = CMTimeMakeWithSeconds(self.currentPlayable.playbackCursorPosition, 10);
+                }
+            
+                self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
+                if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
+                    [self.player seekToTime:startTime completionHandler:^(BOOL finished){
+                        if (finished && !holdPlayback) {
+                            self.player.rate = self.rateForPlayback;
+                        } else {
+                            PRXLog(@"Not starting playback because of hold or seek interruption");
+                        }
+                    }];
+                } else {
+                    PRXLog(@"Aborting playback, network not reachable");
+                }
             } else {
-                startTime = CMTimeMakeWithSeconds(self.currentPlayable.playbackCursorPosition, 10);
-            }
-            
-            self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
-            if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
-                [self.player seekToTime:startTime completionHandler:^(BOOL finished){
-                    if (finished && !holdPlayback) {
+                self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
+                if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
+                    if (!holdPlayback) { 
                         self.player.rate = self.rateForPlayback;
-                    } else {
-                        PRXLog(@"Not starting playback because of hold or seek interruption");
                     }
-                }];
-            } else {
-                PRXLog(@"Aborting playback, network not reachable");
+                } else {
+                    PRXLog(@"Aborting playback, network not reachable");
+                }
+
             }
         } else {
             // should never get here.

@@ -28,11 +28,13 @@
 
 @property (nonatomic, strong, readonly) NSURL *audioURL;
 @property (nonatomic, strong, readonly) NSDictionary *mediaItemProperties;
-@property (nonatomic) NSTimeInterval playbackCursorPosition;
 @property (nonatomic) NSTimeInterval duration;
 @property (nonatomic, strong, readonly) NSDictionary *userInfo; 
 
-- (BOOL) isEqualToPlayable:(id<PRXPlayable>)playable; 
+- (BOOL) isEqualToPlayable:(id<PRXPlayable>)playable;
+
+@optional
+@property (nonatomic) NSTimeInterval playbackCursorPosition;
 
 @end
 

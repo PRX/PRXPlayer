@@ -1,6 +1,6 @@
 //
-//  PRXAudioPlayer.h
-//  PRXNewAudioPlayerTester
+//  PRXPlayer.h
+//  PRXPlayer
 //
 //  Created by Rebecca Nesson on 2/19/13.
 //  Copyright (c) 2013 PRX. All rights reserved.
@@ -38,9 +38,9 @@
 
 @end
 
-@protocol PRXAudioPlayerObserver;
+@protocol PRXPlayerObserver;
 
-@interface PRXAudioPlayer : UIResponder<AVAudioSessionDelegate> {
+@interface PRXPlayer : UIResponder<AVAudioSessionDelegate> {
     // used for determining when the player crosses a meaningful boundary
     id playerSoftEndBoundaryTimeObserver;
     id playerPeriodicTimeObserver;
@@ -54,7 +54,7 @@
     NSUInteger retryCount;
 }
 
-+ (id)sharedPlayer;
++ (id) sharedPlayer;
 - (id) initWithAudioSessionManagement:(BOOL)manageSession;
 
 @property (nonatomic, strong) NSObject<PRXPlayable> *currentPlayable; 
@@ -74,12 +74,12 @@
 - (void) togglePlayPause;
 - (void) stop;
 
-- (id) addObserver:(id<PRXAudioPlayerObserver>)observer persistent:(BOOL)persistent;
-- (void) removeObserver:(id<PRXAudioPlayerObserver>)observer; 
+- (id) addObserver:(id<PRXPlayerObserver>)observer persistent:(BOOL)persistent;
+- (void) removeObserver:(id<PRXPlayerObserver>)observer;
 
 @end
 
-@protocol PRXAudioPlayerObserver <NSObject>
+@protocol PRXPlayerObserver <NSObject>
 
 - (void) observedPlayerStatusDidChange:(AVPlayer *)player;
 - (void) observedPlayerDidObservePeriodicTimeInterval:(AVPlayer *)player;

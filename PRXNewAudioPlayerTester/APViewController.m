@@ -7,8 +7,8 @@
 //
 
 #import "APViewController.h"
-#import "PRXAudioPlayer.h"
-#import "PRXQueueAudioPlayer.h"
+#import "PRXPlayer.h"
+#import "PRXQueuePlayer.h"
 
 @interface APViewController () {
     NSTimer* refreshUITimer;
@@ -33,7 +33,7 @@
 }
 
 - (void)labelize:(id)sender {
-    PRXQueueAudioPlayer* pl = PRXQueueAudioPlayer.sharedPlayer;
+    PRXQueuePlayer* pl = PRXQueuePlayer.sharedPlayer;
     
     self.queueLabel.text = [NSString stringWithFormat:@"%i of %i", (pl.queue.cursor + 1), pl.queue.count];
 
@@ -48,12 +48,12 @@
 
 
 - (IBAction)toggleAction:(id)sender {
-    [PRXQueueAudioPlayer.sharedPlayer togglePlayPause];
+    [PRXQueuePlayer.sharedPlayer togglePlayPause];
 }
 
 - (IBAction)jumpAction:(id)sender {
     CMTime time = CMTimeMake(-3600, 1);
-    [PRXQueueAudioPlayer.sharedPlayer.player seekToTime:time];
+    [[PRXQueuePlayer.sharedPlayer player] seekToTime:time];
 }
 
 
@@ -62,7 +62,7 @@
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
     
-    [PRXQueueAudioPlayer.sharedPlayer addObserver:self persistent:YES];
+    [PRXQueuePlayer.sharedPlayer addObserver:self persistent:YES];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -81,24 +81,24 @@
 - (void) playRemixStreamPressed:(id)sender;
 {
     if (!self.remixStream) { self.remixStream = [[APEpisode alloc] initWithIdentifier:0]; }
-    [[PRXQueueAudioPlayer sharedPlayer] playPlayable:self.remixStream];
+    [[PRXQueuePlayer sharedPlayer] playPlayable:self.remixStream];
 }
 
 - (void) play99PercentPressed:(id)sender;
 {
     if (!self.ninetyNine) { self.ninetyNine = [[APEpisode alloc] initWithIdentifier:1]; }
-    [[PRXQueueAudioPlayer sharedPlayer] playPlayable:self.ninetyNine];
+    [[PRXQueuePlayer sharedPlayer] playPlayable:self.ninetyNine];
 }
 
 - (void) playWBURStream:(id)sender; 
 {
     if (!self.wburStream) { self.wburStream = [[APEpisode alloc] initWithIdentifier:2]; }
-    [[PRXQueueAudioPlayer sharedPlayer] playPlayable:self.wburStream];
+    [[PRXQueuePlayer sharedPlayer] playPlayable:self.wburStream];
 }
 
 - (IBAction)playMothPressed:(id)sender {
     if (!self.moth) { self.moth = [[APEpisode alloc] initWithIdentifier:3]; }
-    [[PRXQueueAudioPlayer sharedPlayer] playPlayable:self.moth];
+    [[PRXQueuePlayer sharedPlayer] playPlayable:self.moth];
 
 }
 

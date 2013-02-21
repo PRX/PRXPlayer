@@ -1,32 +1,21 @@
 //
-//  PRXQueueAudioPlayer.m
-//  PRXNewAudioPlayerTester
+//  PRXAudioPlayer.m
+//  PRXPlayer
 //
 //  Created by Rebecca Nesson on 2/19/13.
 //  Copyright (c) 2013 PRX. All rights reserved.
 //
 
-#import "PRXQueueAudioPlayer.h"
-#import "PRXAudioPlayer_private.h"
+#import "PRXQueuePlayer.h"
+#import "PRXPlayer_private.h"
 
-@implementation PRXQueueAudioPlayer
-
-static PRXQueueAudioPlayer* sharedPlayerInstance;
-
-+ (PRXQueueAudioPlayer*)sharedPlayer {
-    @synchronized(self) {
-        if (sharedPlayerInstance == nil) {
-            sharedPlayerInstance = [[self alloc] init];
-        }
-    }
-    
-    return sharedPlayerInstance;
-}
+@implementation PRXQueuePlayer
 
 - (id)init {
     self = [super init];
     if (self) {
-        _queue = [[PRXAudioQueue alloc] init];
+        _queue = [[PRXPlayerQueue alloc] init];
+        self.queue.delegate = self;
     }
     return self;
 }
@@ -228,7 +217,7 @@ static PRXQueueAudioPlayer* sharedPlayerInstance;
 
 #pragma mark - PRXAudioQueue delegate
 
-- (void) queueDidChange:(PRXAudioQueue *)queue {
+- (void) queueDidChange:(PRXPlayerQueue *)queue {
     [self reportPlayerStatusChangeToObservers]; 
 }
 

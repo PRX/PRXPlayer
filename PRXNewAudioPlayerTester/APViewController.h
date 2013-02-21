@@ -9,9 +9,9 @@
 #import <UIKit/UIKit.h>
 #import "APEpisode.h"
 
-#import "PRXAudioPlayer.h"
+#import "PRXPlayer.h"
 
-@interface APViewController : UIViewController <PRXAudioPlayerObserver>
+@interface APViewController : UIViewController <PRXPlayerObserver>
 
 @property (nonatomic, strong) IBOutlet UILabel* queueLabel;
 @property (nonatomic, strong) IBOutlet UILabel* timeLabel;

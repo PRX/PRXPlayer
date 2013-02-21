@@ -1,19 +1,17 @@
 //
-//  PRXQueueAudioPlayer.h
-//  PRXNewAudioPlayerTester
+//  PRXAudioPlayer.h
+//  PRXPlayer
 //
 //  Created by Rebecca Nesson on 2/19/13.
 //  Copyright (c) 2013 PRX. All rights reserved.
 //
 
-#import "PRXAudioPlayer.h"
-#import "PRXAudioQueue.h"
+#import "PRXPlayer.h"
+#import "PRXPlayerQueue.h"
 
-@interface PRXQueueAudioPlayer : PRXAudioPlayer<PRXAudioQueueDelegate>
+@interface PRXQueuePlayer : PRXPlayer<PRXPlayerQueueDelegate>
 
-+ (PRXQueueAudioPlayer *)sharedPlayer;
-
-@property (strong, nonatomic, readonly) PRXAudioQueue *queue;
+@property (strong, nonatomic, readonly) PRXPlayerQueue *queue;
 @property (nonatomic, readonly) BOOL hasNext;
 @property (nonatomic, readonly) BOOL hasPrevious;
 

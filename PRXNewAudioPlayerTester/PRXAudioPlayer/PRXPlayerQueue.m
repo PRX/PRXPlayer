@@ -1,14 +1,14 @@
 //
-//  PRXAudioQueue.m
-//  PRXNewAudioPlayerTester
+//  PRXPlayerQueue.m
+//  PRXPlayer
 //
 //  Created by Rebecca Nesson on 2/19/13.
 //  Copyright (c) 2013 PRX. All rights reserved.
 //
 
-#import "PRXAudioQueue.h"
+#import "PRXPlayerQueue.h"
 
-@interface PRXAudioQueue ()
+@interface PRXPlayerQueue ()
 
 @property (nonatomic, strong) NSMutableArray *backingStore;
 
@@ -19,7 +19,7 @@
 
 @end
 
-@implementation PRXAudioQueue
+@implementation PRXPlayerQueue
 
 - (id) init {
     self = [super init];

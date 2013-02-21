@@ -1,16 +1,16 @@
 //
-//  PRXAudioPlayer_private.h
-//  PRXNewAudioPlayerTester
+//  PRXPlayer_private.h
+//  PRXPlayer
 //
 //  Created by Rebecca Nesson on 2/19/13.
 //  Copyright (c) 2013 PRX. All rights reserved.
 //
 
-#import "PRXAudioPlayer.h"
+#import "PRXPlayer.h"
 #import "Reachability.h"
 #import <MediaPlayer/MediaPlayer.h>
 
-@interface PRXAudioPlayer ()
+@interface PRXPlayer ()
 
 extern float LongPeriodicTimeObserver;
 
@@ -58,7 +58,7 @@ extern float LongPeriodicTimeObserver;
 - (void) observePlayerItem:(AVPlayerItem*)playerItem;
 - (void) stopObservingPlayerItem:(AVPlayerItem*)playerItem;
 
-- (BOOL) isBeingObservedBy:(id<PRXAudioPlayerObserver>)observer;
+- (BOOL) isBeingObservedBy:(id<PRXPlayerObserver>)observer;
 - (void) removeNonPersistentObservers:(BOOL)rerun;
 
 - (void) reportPlayerStatusChangeToObservers;

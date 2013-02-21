@@ -1,17 +1,16 @@
 //
-//  PRXAudioPlayer.m
-//  PRXNewAudioPlayerTester
+//  PRXPlayer.m
+//  PRXPlayer
 //
 //  Created by Rebecca Nesson on 2/19/13.
 //  Copyright (c) 2013 PRX. All rights reserved.
 //
 
-#import "PRXAudioPlayer.h"
-#import "PRXAudioPlayer_private.h"
+#import "PRXPlayer_private.h"
 #import <MediaPlayer/MediaPlayer.h>
 #import "Reachability.h"
 
-@implementation PRXAudioPlayer
+@implementation PRXPlayer
 
 static const NSString* PlayerStatusContext;
 static const NSString* PlayerRateContext;
@@ -21,7 +20,7 @@ static const NSString* PlayerItemBufferEmptyContext;
 
 float LongPeriodicTimeObserver = 10.0f;
 
-static PRXAudioPlayer* sharedPlayerInstance;
+static PRXPlayer* sharedPlayerInstance;
 
 + (id)sharedPlayer {
     @synchronized(self) {
@@ -67,7 +66,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
         
         _reach = [Reachability reachabilityWithHostname:@"www.google.com"];
         
-        __block PRXAudioPlayer *p = self;
+        __block PRXPlayer *p = self;
         
         self.reach.reachableBlock = ^(Reachability *r) {
             PRXLog(@"REACHABLE");
@@ -509,7 +508,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 #pragma mark External observers
 
-- (id) addObserver:(id<PRXAudioPlayerObserver>)observer persistent:(BOOL)persistent {
+- (id) addObserver:(id<PRXPlayerObserver>)observer persistent:(BOOL)persistent {
     if (![self isBeingObservedBy:observer]) {
         NSNumber* _persistent = @(persistent);
         NSDictionary* dict = @{ @"obj":observer, @"persist":_persistent };
@@ -522,7 +521,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     return @"YES";
 }
 
-- (void) removeObserver:(id<PRXAudioPlayerObserver>)observer {
+- (void) removeObserver:(id<PRXPlayerObserver>)observer {
     NSMutableArray* discardItems = [NSMutableArray array];
     
     for (NSDictionary* dict in _observers) {
@@ -536,7 +535,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     _observers = [NSArray arrayWithArray:mArr];
 }
 
-- (BOOL) isBeingObservedBy:(id<PRXAudioPlayerObserver>)observer {
+- (BOOL) isBeingObservedBy:(id<PRXPlayerObserver>)observer {
     for (NSDictionary* dict in _observers) {
         if ([dict[@"obj"] isEqual:observer]) {
             return YES;
@@ -551,7 +550,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     for (NSDictionary* dict in _observers) {
         if ([dict[@"persist"] isEqualToNumber:@NO]) {
             [discardItems addObject:dict];
-            id<PRXAudioPlayerObserver> observer = dict[@"obj"];
+            id<PRXPlayerObserver> observer = dict[@"obj"];
             
             if (rerun) {
                 [observer observedPlayerStatusDidChange:self.player];
@@ -567,14 +566,14 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 - (void) reportPlayerStatusChangeToObservers {
     for (NSDictionary* dict in _observers) {
-        id<PRXAudioPlayerObserver> observer = dict[@"obj"];
+        id<PRXPlayerObserver> observer = dict[@"obj"];
         [observer observedPlayerStatusDidChange:self.player];
     }
 }
 
 - (void) reportPlayerTimeIntervalToObservers {
     for (NSDictionary* dict in _observers) {
-        id<PRXAudioPlayerObserver> observer = dict[@"obj"];
+        id<PRXPlayerObserver> observer = dict[@"obj"];
         [observer observedPlayerDidObservePeriodicTimeInterval:self.player];
     }
 }

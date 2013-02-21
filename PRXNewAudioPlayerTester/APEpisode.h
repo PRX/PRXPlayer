@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "PRXAudioPlayer.h"
+#import "PRXPlayer.h"
 
 @interface APEpisode : NSObject<PRXPlayable>
 

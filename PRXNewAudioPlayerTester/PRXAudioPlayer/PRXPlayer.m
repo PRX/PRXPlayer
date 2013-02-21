@@ -268,6 +268,8 @@ static PRXPlayer* sharedPlayerInstance;
                 if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
                     if (!holdPlayback) { 
                         self.player.rate = self.rateForPlayback;
+                    } else {
+                        PRXLog(@"Not starting playback because of a hold or seek interruption");
                     }
                 } else {
                     PRXLog(@"Aborting playback, network not reachable");

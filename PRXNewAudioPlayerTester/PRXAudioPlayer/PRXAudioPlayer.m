@@ -286,6 +286,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 - (void) play {
     if (self.currentPlayable) {
+        holdPlayback = NO; 
         [self loadAndPlayPlayable:self.currentPlayable];
     }
 }

@@ -186,8 +186,8 @@
 }
 
 - (NSIndexSet *) allQueuePositionsForObject:(id<PRXPlayable>)playable {
-    return [self.queue indexesOfObjectsPassingTest:^BOOL(id<PRXPlayable>playable, NSUInteger idx, BOOL *stop) {
-        return [playable isEqualToPlayable:playable];
+    return [self.queue indexesOfObjectsPassingTest:^BOOL(id<PRXPlayable>pl, NSUInteger idx, BOOL *stop) {
+        return [pl isEqualToPlayable:playable];
     }];
 }
 

@@ -40,14 +40,16 @@
 
 @protocol PRXPlayerObserver;
 
-@interface PRXPlayer : UIResponder<AVAudioSessionDelegate> {
+@interface PRXPlayer : UIResponder <AVAudioSessionDelegate> {
     // used for determining when the player crosses a meaningful boundary
     id playerSoftEndBoundaryTimeObserver;
     id playerPeriodicTimeObserver;
     id playerLongPeriodicTimeObserver; 
     NSDate *lastLongPeriodicTimeObserverAction;
+    
     BOOL holdPlayback;
     BOOL waitingForPlayableToBeReadyForPlayback;
+    
     float rateWhenAudioSessionDidBeginInterruption;
     NSDate* dateWhenAudioSessionDidBeginInterruption;
     

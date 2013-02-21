@@ -62,13 +62,16 @@ static PRXAudioPlayer* sharedPlayerInstance;
         
         _reach = [Reachability reachabilityWithHostname:@"www.google.com"];
         
-        __block PRXAudioPlayer *p = self; 
+        __block PRXAudioPlayer *p = self;
+        
         self.reach.reachableBlock = ^(Reachability *r) {
             PRXLog(@"REACHABLE");
-            [p didEndBufferInterruption];
+            [p reachDidBecomeReachable];
         };
+        
         self.reach.unreachableBlock = ^(Reachability *r) {
             PRXLog(@"UNREACHABLE");
+            [p reachDidBecomeUnreachable];
         };
 
         
@@ -89,6 +92,10 @@ static PRXAudioPlayer* sharedPlayerInstance;
         }
     }
     return self;
+}
+
+- (NSUInteger)retryLimit {
+    return 3;
 }
 
 - (void) setPlayer:(AVPlayer*)player {
@@ -173,6 +180,13 @@ static PRXAudioPlayer* sharedPlayerInstance;
     return MAX(0.0f, CMTimeGetSeconds(duration));
 }
 
+- (float) rateForPlayable:(NSObject<PRXPlayable> *)playable {
+    if ([self isCurrentPlayable:playable]) {
+        return self.player.rate;
+    }
+    return 0.0f;
+}
+
 #pragma mark Asynchronous loading callbacks
 
 - (void) didLoadTracksForAsset:(AVURLAsset*)asset {
@@ -189,58 +203,66 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 - (void) loadPlayable:(NSObject<PRXPlayable> *)playable {
     holdPlayback = YES;
-    if (![self isCurrentPlayable:playable]) {
-        waitingForPlayableToBeReadyForPlayback = NO;
-    }
-    [self loadAndPlayPlayable:playable];
+    retryCount = 0;
+    [self preparePlayable:playable];
 }
 
 - (void) playPlayable:(NSObject<PRXPlayable> *)playable {
     holdPlayback = NO;
-    if (![self isCurrentPlayable:playable]) { 
+    retryCount = 0;
+    [self preparePlayable:playable];
+}
+
+- (void) preparePlayable:(NSObject<PRXPlayable> *)playable {
+    rateWhenAudioSessionDidBeginInterruption = NSNotFound;
+    dateWhenAudioSessionDidBeginInterruption = nil;
+    
+    if (![self isCurrentPlayable:playable]) {
         waitingForPlayableToBeReadyForPlayback = NO;
     }
+    
     [self loadAndPlayPlayable:playable];
 }
 
-- (float) rateForPlayable:(NSObject<PRXPlayable> *)playable {
-    if ([self isCurrentPlayable:playable]) {
-        return self.player.rate;
-    }
-    return 0.0f; 
-}
-
 - (void) loadAndPlayPlayable:(id<PRXPlayable>)playable {
-    if ([self isCurrentPlayable:playable] && ![self.currentURLAsset.URL isEqual:playable.audioURL]) {
-        PRXLog(@"Switching to stream or local file because other is no longer available");
-        PRXLog(@"%@ %@", self.currentURLAsset, playable.audioURL);  
-        self.currentURLAsset = [AVURLAsset assetWithURL:playable.audioURL];
-    } else if ([self rateForPlayable:playable] > 0.0f) {
-        PRXLog(@"Playable is already playing");
-        return;
-    } else if ([self isCurrentPlayable:playable] && [self rateForPlayable:playable] <= 0.0f && !waitingForPlayableToBeReadyForPlayback) {
-        PRXLog(@"Resume (or start) playing current playable %@", self.currentPlayable.description);
-        CMTime startTime;
-        
-        if (self.currentPlayable.duration - self.currentPlayable.playbackCursorPosition < 3.0f) {
-            startTime = CMTimeMake(0, 1);
+    if ([self isCurrentPlayable:playable]) {
+        if (![self.currentURLAsset.URL isEqual:playable.audioURL]) {
+            PRXLog(@"Switching to stream or local file because other is no longer available");
+            PRXLog(@"%@ %@", self.currentURLAsset, playable.audioURL);
+            waitingForPlayableToBeReadyForPlayback = YES;
+            self.currentURLAsset = [AVURLAsset assetWithURL:playable.audioURL];
+        } else if ([self rateForPlayable:playable] > 0.0f) {
+            PRXLog(@"Playable is already playing");
+            waitingForPlayableToBeReadyForPlayback = NO;
+            return;
+        } else if ([self rateForPlayable:playable] == 0.0f && !waitingForPlayableToBeReadyForPlayback) {
+            PRXLog(@"Resume (or start) playing current playable %@", self.currentPlayable.description);
+            CMTime startTime;
+            
+            if (self.currentPlayable.duration - self.currentPlayable.playbackCursorPosition < 3.0f) {
+                startTime = CMTimeMake(0, 1);
+            } else {
+                startTime = CMTimeMakeWithSeconds(self.currentPlayable.playbackCursorPosition, 10);
+            }
+            
+            self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
+            if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
+                [self.player seekToTime:startTime completionHandler:^(BOOL finished){
+                    if (finished && !holdPlayback) {
+                        self.player.rate = self.rateForPlayback;
+                    } else {
+                        PRXLog(@"Not starting playback because of hold or seek interruption");
+                    }
+                }];
+            } else {
+                PRXLog(@"Aborting playback, network not reachable");
+            }
         } else {
-            startTime = CMTimeMakeWithSeconds(self.currentPlayable.playbackCursorPosition, 10);
+            // should never get here.
+            // generally, assuming the waiting flag is correct, we just want to keep waiting...
+            
         }
-        
-        self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
-        if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
-            [self.player seekToTime:startTime completionHandler:^(BOOL finished){
-                if (finished && !holdPlayback) {
-                    self.player.rate = self.rateForPlayback; 
-                } else {
-                    PRXLog(@"Not starting playback because of hold or seek interruption");
-                }
-            }];
-        } else {
-            PRXLog(@"Aborting playback, network not reachable"); 
-        }
-    } else if (!waitingForPlayableToBeReadyForPlayback) {
+    } else {
         self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
         if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
             PRXLog(@"loading episode into player, playback will start async %@", [playable description]);
@@ -249,14 +271,12 @@ static PRXAudioPlayer* sharedPlayerInstance;
         } else {
             PRXLog(@"Aborting loading, network not reachable");
         }
-    } else {
-        PRXLog(@"Waiting for ready to play %@", [playable description]);
     }
 }
 
 - (void) reloadAndPlayPlayable:(NSObject<PRXPlayable> *)playable {
     [self stop];
-    [self loadAndPlayPlayable:playable]; 
+    [self preparePlayable:playable];
 }
 
 - (void) play {
@@ -341,6 +361,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
 }
 
 - (void) playerErrorDidChange:(NSDictionary*)change {
+    [self stop];
     [self reportPlayerStatusChangeToObservers];
 }
 
@@ -350,6 +371,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
     if ([change[@"kind"] integerValue] == 1) {
         if (self.player.currentItem.status == AVPlayerStatusReadyToPlay) {
             waitingForPlayableToBeReadyForPlayback = NO;
+            retryCount = 0;
             
             [self setMPNowPlayingInfoCenterNowPlayingInfo];
             PRXLog(@"Player item has become ready to play; pass it back to playEpisode: to get it to start playback.");
@@ -360,18 +382,38 @@ static PRXAudioPlayer* sharedPlayerInstance;
             // if we get an error condition, start over playing the thing it tried to play.
             // Once a player fails it can't be used for playback anymore!
             waitingForPlayableToBeReadyForPlayback = NO;
-            NSObject<PRXPlayable> *tmp = self.currentPlayable;
-            [self stop];
-            [self playPlayable:tmp];
+            
+            if (retryCount < self.retryLimit) {
+                retryCount++;
+                PRXLog(@"Retrying (retry number %i of %i)", retryCount, self.retryLimit);
+                NSObject<PRXPlayable> *playableToRetry = self.currentPlayable;
+                [self stop];
+                
+                [self preparePlayable:playableToRetry];
+            } else {
+                PRXLog(@"Playable failed to become ready even after retries.");
+                [self stop];
+                [self reportPlayerStatusChangeToObservers];
+            }
+            
+        } else {
+            // AVPlayerStatusUnknown
+            PRXLog(@"+++++++++++++++++ AVPlayerStatusUnknown +++++++++++++");
+            PRXLog(@"This shouldn't happen after an item has become ready.");
         }
     }
 }
 
 - (void) playerItemBufferEmptied:(NSDictionary*)change {
-    if (self.reach.isReachable) { // reload current playable and try again
-        [self reloadAndPlayPlayable:self.currentPlayable];
-    } else {  // set up state for when network reconnects
-        [self didBeginBufferInterruption];
+    
+    PRXLog(@"Buffer emptied");
+    // try again?
+    // need to make sure the buffer isn't emptying when nothing is actually playing
+    // resulting in something starting on its own
+    
+    // by stopping here we lose any ability for AVPlayer to recover
+    if (self.reach.isReachable) {
+//        [self reloadAndPlayPlayable:self.currentPlayable];
     }
 }
 
@@ -520,29 +562,27 @@ static PRXAudioPlayer* sharedPlayerInstance;
 
 #pragma mark Reachability Interruption
 
-- (void) didBeginBufferInterruption {
-    PRXLog(@"Audio session has been interrupted, buffer became empty...");
-    dateWhenBufferEmptied = NSDate.date;
-    playableWhenBufferEmptied = self.currentPlayable; 
+- (void) reachDidBecomeUnreachable {
+    PRXLog(@"Network has become unreachable...");
+    rateWhenAudioSessionDidBeginInterruption = self.player.rate;
+    dateWhenAudioSessionDidBeginInterruption = NSDate.date;
 }
 
-- (void) didEndBufferInterruption {
-    // make sure we don't resume anything that didn't need to resumed
-    if (!dateWhenBufferEmptied || !playableWhenBufferEmptied) { return; }
-    NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateWhenBufferEmptied];
+- (void) reachDidBecomeReachable {
+    NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateWhenAudioSessionDidBeginInterruption];
     float interruptLimit = self.interruptResumeTimeLimit;
-    PRXLog(@"Reachability returned from interruption after %f seconds. User limit is %f seconds.", intervalSinceInterrupt, interruptLimit);
+    PRXLog(@"Reachability was regained after %f seconds. User limit is %f seconds.", intervalSinceInterrupt, interruptLimit);
     
-    if (interruptLimit < 0
-        || (intervalSinceInterrupt <= interruptLimit)) {
-        PRXLog(@"Resuming playback after interrupt; limit not surpassed.");
-        if (self.currentPlayable && [self.currentPlayable isEqualToPlayable:playableWhenBufferEmptied]) {
-            [self reloadAndPlayPlayable:playableWhenBufferEmptied];
-        } else {
-            PRXLog(@"user has moved to a different playable after buffer emptying");
+    if (rateWhenAudioSessionDidBeginInterruption > 0.0f) {
+        if (interruptLimit < 0
+            || (intervalSinceInterrupt <= interruptLimit)) {
+            PRXLog(@"[Resuming playback after unreachable; limit not surpassed.");
+            self.player.rate = rateWhenAudioSessionDidBeginInterruption;
         }
     }
-    dateWhenBufferEmptied = nil;
+    
+    rateWhenAudioSessionDidBeginInterruption = NSNotFound;
+    dateWhenAudioSessionDidBeginInterruption = nil;
 }
 
 #pragma mark Audio Session Interruption
@@ -564,7 +604,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
 - (void) audioSessionDidEndInterruption:(NSNotification*)notification {
     NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateWhenAudioSessionDidBeginInterruption];
     float interruptLimit = self.interruptResumeTimeLimit;
-    PRXLog(@"[KRT][Audio] Audio session has returned from interruption after %f seconds. User limit is %f seconds.", intervalSinceInterrupt, interruptLimit);
+    PRXLog(@"Audio session has returned from interruption after %f seconds. User limit is %f seconds.", intervalSinceInterrupt, interruptLimit);
     
     if (rateWhenAudioSessionDidBeginInterruption > 0.0f) {
         if (interruptLimit < 0
@@ -574,7 +614,7 @@ static PRXAudioPlayer* sharedPlayerInstance;
         }
     }
     
-    rateWhenAudioSessionDidBeginInterruption = CGFLOAT_MIN;
+    rateWhenAudioSessionDidBeginInterruption = NSNotFound;
     dateWhenAudioSessionDidBeginInterruption = nil;
 }
 

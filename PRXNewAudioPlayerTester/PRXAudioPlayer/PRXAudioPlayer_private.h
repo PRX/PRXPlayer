@@ -29,6 +29,8 @@ extern float LongPeriodicTimeObserver;
 @property (nonatomic, readonly) BOOL allowsPlaybackViaWWAN;
 @property (nonatomic, readonly) NSTimeInterval interruptResumeTimeLimit; 
 
+@property (nonatomic, readonly) NSUInteger retryLimit;
+
 - (void) loadAndPlayPlayable:(id<PRXPlayable>)playable;
 
 - (void) currentPlayableWillChange;
@@ -47,8 +49,8 @@ extern float LongPeriodicTimeObserver;
 - (void) audioSessionDidEndInterruption:(NSNotification*)notification;
 - (void) audioSessionInterruption:(NSNotification*)notification;
 
-- (void) didBeginBufferInterruption;
-- (void) didEndBufferInterruption; 
+- (void) reachDidBecomeUnreachable;
+- (void) reachDidBecomeReachable;
 
 - (void) observePlayer:(AVPlayer*)player;
 - (void) stopObservingPlayer:(AVPlayer*)player;

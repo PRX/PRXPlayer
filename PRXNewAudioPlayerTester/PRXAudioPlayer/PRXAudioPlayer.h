@@ -40,8 +40,8 @@
     BOOL waitingForPlayableToBeReadyForPlayback;
     float rateWhenAudioSessionDidBeginInterruption;
     NSDate* dateWhenAudioSessionDidBeginInterruption;
-    id<PRXPlayable> playableWhenBufferEmptied;
-    NSDate *dateWhenBufferEmptied; 
+    
+    NSUInteger retryCount;
 }
 
 + (PRXAudioPlayer *)sharedPlayer;

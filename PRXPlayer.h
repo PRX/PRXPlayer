@@ -67,7 +67,8 @@
 @property (nonatomic, strong, readonly) NSArray *observers;
 
 - (void) playPlayable:(id<PRXPlayable>)playable;
-- (void) loadPlayable:(id<PRXPlayable>)playable; 
+- (void) loadPlayable:(id<PRXPlayable>)playable;
+- (void) togglePlayable:(id<PRXPlayable>)playable;
 - (float) rateForPlayable:(id<PRXPlayable>)playable;
 - (BOOL) isCurrentPlayable:(NSObject<PRXPlayable> *)playable; 
 

@@ -217,6 +217,14 @@ static PRXPlayer* sharedPlayerInstance;
     [self preparePlayable:playable];
 }
 
+- (void) togglePlayable:(id<PRXPlayable>)playable {
+  if ([self rateForPlayable:playable]) {
+    [self playPlayable:playable];
+  } else {
+    [self pause];
+  }
+}
+
 - (void) preparePlayable:(NSObject<PRXPlayable> *)playable {
     rateWhenAudioSessionDidBeginInterruption = NSNotFound;
     dateWhenAudioSessionDidBeginInterruption = nil;

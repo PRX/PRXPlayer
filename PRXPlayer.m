@@ -291,7 +291,7 @@ static PRXPlayer* sharedPlayerInstance;
         }
     } else {
         self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
-        if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
+        if (self.reach.isReachable || [playable.audioURL isFileURL]) {
             PRXLog(@"loading episode into player, playback will start async %@", [playable description]);
             self.currentPlayable = playable;
             

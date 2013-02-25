@@ -92,9 +92,6 @@
 
 - (void) observedPlayerStatusDidChange:(AVPlayer *)player;
 - (void) observedPlayerDidObservePeriodicTimeInterval:(AVPlayer *)player;
-
-@optional
-
 - (void) observedPlayerDidObserveLongPeriodicTimeInterval:(AVPlayer *)player;
 
 @end

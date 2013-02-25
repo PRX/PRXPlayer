@@ -71,8 +71,10 @@
 - (void) playPlayable:(id<PRXPlayable>)playable;
 - (void) loadPlayable:(id<PRXPlayable>)playable;
 - (void) togglePlayable:(id<PRXPlayable>)playable;
+
 - (float) rateForPlayable:(id<PRXPlayable>)playable;
-- (BOOL) isCurrentPlayable:(NSObject<PRXPlayable> *)playable; 
+- (BOOL) isCurrentPlayable:(NSObject<PRXPlayable> *)playable;
+- (BOOL) isWaitingForPlayable:(NSObject<PRXPlayable> *)playable;
 
 - (void) play;
 - (void) pause;
@@ -85,6 +87,8 @@
 @end
 
 @protocol PRXPlayerObserver <NSObject>
+
+@optional
 
 - (void) observedPlayerStatusDidChange:(AVPlayer *)player;
 - (void) observedPlayerDidObservePeriodicTimeInterval:(AVPlayer *)player;

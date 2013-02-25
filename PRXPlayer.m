@@ -192,6 +192,10 @@ static PRXPlayer* sharedPlayerInstance;
     return 0.0f;
 }
 
+- (BOOL) isWaitingForPlayable:(NSObject<PRXPlayable> *)playable {
+  return ([self isCurrentPlayable:playable] && waitingForPlayableToBeReadyForPlayback);
+}
+
 #pragma mark Asynchronous loading callbacks
 
 - (void) didLoadTracksForAsset:(AVURLAsset*)asset {
@@ -219,7 +223,7 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) togglePlayable:(id<PRXPlayable>)playable {
-  if ([self rateForPlayable:playable]) {
+  if ([self rateForPlayable:playable] == 0.0f) {
     [self playPlayable:playable];
   } else {
     [self pause];
@@ -582,14 +586,18 @@ static PRXPlayer* sharedPlayerInstance;
 - (void) reportPlayerStatusChangeToObservers {
     for (NSDictionary* dict in _observers) {
         id<PRXPlayerObserver> observer = dict[@"obj"];
-        [observer observedPlayerStatusDidChange:self.player];
+        if ([observer respondsToSelector:@selector(observedPlayerStatusDidChange:)]) {
+            [observer observedPlayerStatusDidChange:self.player];
+        }
     }
 }
 
 - (void) reportPlayerTimeIntervalToObservers {
     for (NSDictionary* dict in _observers) {
         id<PRXPlayerObserver> observer = dict[@"obj"];
-        [observer observedPlayerDidObservePeriodicTimeInterval:self.player];
+        if ([observer respondsToSelector:@selector(observedPlayerDidObservePeriodicTimeInterval:)]) {
+            [observer observedPlayerDidObservePeriodicTimeInterval:self.player];
+        }
     }
 }
 

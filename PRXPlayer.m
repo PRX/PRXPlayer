@@ -264,7 +264,7 @@ static PRXPlayer* sharedPlayerInstance;
                 if (CMTimeGetSeconds(self.player.currentItem.duration) - self.currentPlayable.playbackCursorPosition < 3.0f) {
                     startTime = CMTimeMake(0, 1);
                 } else {
-                    startTime = CMTimeMakeWithSeconds(self.currentPlayable.playbackCursorPosition, 10);
+                    startTime = CMTimeMakeWithSeconds(self.currentPlayable.playbackCursorPosition, 1);
                 }
             
                 self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;

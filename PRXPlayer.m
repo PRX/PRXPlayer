@@ -119,7 +119,9 @@ static PRXPlayer* sharedPlayerInstance;
         
         waitingForPlayableToBeReadyForPlayback = YES;
         if (!holdPlayback) { playerIsBuffering = YES; }
-        
+      
+        [self reportPlayerStatusChangeToObservers];
+      
         self.currentURLAsset = [AVURLAsset assetWithURL:self.currentPlayable.audioURL];
     }
 }
@@ -300,7 +302,6 @@ static PRXPlayer* sharedPlayerInstance;
         if (self.reach.isReachable || [playable.audioURL isFileURL]) {
             PRXLog(@"loading episode into player, playback will start async %@", [playable description]);
             self.currentPlayable = playable;
-            
         } else {
             PRXLog(@"Aborting loading, network not reachable");
         }

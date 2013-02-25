@@ -117,7 +117,8 @@ static PRXPlayer* sharedPlayerInstance;
         _currentPlayable = playable;
         [self observePlayer:self.player];
         
-        waitingForPlayableToBeReadyForPlayback = YES; 
+        waitingForPlayableToBeReadyForPlayback = YES;
+        if (!holdPlayback) { playerIsBuffering = YES; }
         
         self.currentURLAsset = [AVURLAsset assetWithURL:self.currentPlayable.audioURL];
     }
@@ -242,6 +243,7 @@ static PRXPlayer* sharedPlayerInstance;
             PRXLog(@"Switching to stream or local file because other is no longer available");
             PRXLog(@"%@ %@", self.currentURLAsset, playable.audioURL);
             waitingForPlayableToBeReadyForPlayback = YES;
+            if (!holdPlayback) { playerIsBuffering = YES; }
             self.currentURLAsset = [AVURLAsset assetWithURL:playable.audioURL];
         } else if ([self rateForPlayable:playable] > 0.0f) {
             PRXLog(@"Playable is already playing");
@@ -253,7 +255,7 @@ static PRXPlayer* sharedPlayerInstance;
             if ([self.currentPlayable respondsToSelector:@selector(playbackCursorPosition)]) { 
                 CMTime startTime;
             
-                if (self.currentPlayable.duration - self.currentPlayable.playbackCursorPosition < 3.0f) {
+                if (CMTimeGetSeconds(self.player.currentItem.duration) - self.currentPlayable.playbackCursorPosition < 3.0f) {
                     startTime = CMTimeMake(0, 1);
                 } else {
                     startTime = CMTimeMakeWithSeconds(self.currentPlayable.playbackCursorPosition, 10);
@@ -315,6 +317,7 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) pause {
     self.player.rate = 0.0f;
+    playerIsBuffering = NO;
 }
 
 - (void) togglePlayPause {
@@ -329,6 +332,7 @@ static PRXPlayer* sharedPlayerInstance;
     self.currentPlayerItem = nil;
     self.currentURLAsset = nil;
     self.player = nil;
+    playerIsBuffering = NO; 
 }
 
 #pragma mark Target playback rates
@@ -454,6 +458,7 @@ static PRXPlayer* sharedPlayerInstance;
     
     if (ABS(since) > LongPeriodicTimeObserver || !lastLongPeriodicTimeObserverAction) {
         lastLongPeriodicTimeObserverAction = [NSDate date];
+        [self reportPlayerLongTimeIntervalToObservers]; 
     }
 }
 
@@ -585,6 +590,15 @@ static PRXPlayer* sharedPlayerInstance;
     for (NSDictionary* dict in _observers) {
         id<PRXPlayerObserver> observer = dict[@"obj"];
         [observer observedPlayerDidObservePeriodicTimeInterval:self.player];
+    }
+}
+
+- (void) reportPlayerLongTimeIntervalToObservers {
+    for (NSDictionary* dict in _observers) {
+        id<PRXPlayerObserver> observer = dict[@"obj"];
+        if ([observer respondsToSelector:@selector(observedPlayerDidObserveLongPeriodicTimeInterval:)]) {
+            [observer observedPlayerDidObserveLongPeriodicTimeInterval:self.player];
+        }
     }
 }
 

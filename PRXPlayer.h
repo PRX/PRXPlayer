@@ -28,13 +28,14 @@
 
 @property (nonatomic, strong, readonly) NSURL *audioURL;
 @property (nonatomic, strong, readonly) NSDictionary *mediaItemProperties;
-@property (nonatomic) NSTimeInterval duration;
 @property (nonatomic, strong, readonly) NSDictionary *userInfo; 
 
 - (BOOL) isEqualToPlayable:(id<PRXPlayable>)playable;
 
 @optional
+@property (nonatomic) NSTimeInterval duration;
 @property (nonatomic) NSTimeInterval playbackCursorPosition;
+@property (nonatomic, readonly) BOOL isStream; 
 
 @end
 
@@ -49,6 +50,7 @@
     
     BOOL holdPlayback;
     BOOL waitingForPlayableToBeReadyForPlayback;
+    BOOL playerIsBuffering;
     
     float rateWhenAudioSessionDidBeginInterruption;
     NSDate* dateWhenAudioSessionDidBeginInterruption;
@@ -86,5 +88,9 @@
 
 - (void) observedPlayerStatusDidChange:(AVPlayer *)player;
 - (void) observedPlayerDidObservePeriodicTimeInterval:(AVPlayer *)player;
+
+@optional
+
+- (void) observedPlayerDidObserveLongPeriodicTimeInterval:(AVPlayer *)player;
 
 @end

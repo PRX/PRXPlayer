@@ -115,8 +115,12 @@ static PRXPlayer* sharedPlayerInstance;
         [self currentPlayableWillChange];
         
         _currentPlayable = playable;
-        [self observePlayer:self.player];
-        
+      
+      // This should not be necessary if self.player is being managed properly. Should only need to
+      // set up observers on the AVPlayer when it's created. EXCEPT for the boundary timer; that needs
+      // the change whenever the playable changes.
+//        [self observePlayer:self.player];
+      
         waitingForPlayableToBeReadyForPlayback = YES;
         if (!holdPlayback) { playerIsBuffering = YES; }
       
@@ -385,7 +389,13 @@ static PRXPlayer* sharedPlayerInstance;
     if (self.currentPlayable) {
         [self pause];
         [self removeNonPersistentObservers:YES];
-        [self stopObservingPlayer:self.player];
+        [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+      
+      // This should not be necessary if self.player is being managed properly. Should only need to
+      // kill observers on the AVPlayer when the player itself is killed (in stop).
+      // EXCEPT for the boundary timer; that needs
+      // to change whenever the playable changes.
+//        [self stopObservingPlayer:self.player];
     }
 }
 
@@ -412,6 +422,21 @@ static PRXPlayer* sharedPlayerInstance;
             
             [self setMPNowPlayingInfoCenterNowPlayingInfo];
             PRXLog(@"Player item has become ready to play; pass it back to playEpisode: to get it to start playback.");
+          
+            // Find a better place for this
+            if (self.player.currentItem.duration.value > 0) {
+                int64_t boundryTime = ((double)self.player.currentItem.duration.value * self.softEndBoundaryProgress);
+                CMTime boundry = CMTimeMake(boundryTime, self.player.currentItem.duration.timescale);
+                
+                NSValue* _boundry = [NSValue valueWithCMTime:boundry];
+                
+                __block id this = self;
+                
+                playerSoftEndBoundaryTimeObserver = [self.player addBoundaryTimeObserverForTimes:@[ _boundry ] queue:dispatch_queue_create("playerQueue", NULL) usingBlock:^{
+                  [this playerSoftEndBoundaryTimeObserverAction];
+                }];
+            }
+          
             [self loadAndPlayPlayable:self.currentPlayable];
         } else if (self.player.currentItem.status == AVPlayerStatusFailed) {
             PRXLog(@"Player status failed %@", self.player.currentItem.error);
@@ -501,6 +526,7 @@ static PRXPlayer* sharedPlayerInstance;
     
     [player removeTimeObserver:playerPeriodicTimeObserver];
     [player removeTimeObserver:playerLongPeriodicTimeObserver];
+    [player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
 }
 
 - (void) observePlayerItem:(AVPlayerItem*)playerItem {

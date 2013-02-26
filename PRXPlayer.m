@@ -260,7 +260,7 @@ static PRXPlayer* sharedPlayerInstance;
             waitingForPlayableToBeReadyForPlayback = NO;
             return;
         } else if ([self rateForPlayable:playable] == 0.0f && !waitingForPlayableToBeReadyForPlayback) {
-            PRXLog(@"Resume (or start) playing current playable %@", self.currentPlayable.description);
+            PRXLog(@"Resume (or start) playing current playable");
             
             if ([self.currentPlayable respondsToSelector:@selector(playbackCursorPosition)]) { 
                 CMTime startTime;

@@ -87,7 +87,7 @@ static PRXPlayer* sharedPlayerInstance;
         
             if (!success) { /* handle the error in setCategoryError */ }
             NSError *activationError = nil;
-            success = [[AVAudioSession sharedInstance] setActive: YES error: &activationError];
+            success = [[AVAudioSession sharedInstance] setActive:YES error: &activationError];
             if (!success) { /* handle the error in activationError */ }
         
             if (SYSTEM_VERSION_LESS_THAN(@"6.0")) {
@@ -328,6 +328,12 @@ static PRXPlayer* sharedPlayerInstance;
 - (void) pause {
     self.player.rate = 0.0f;
     playerIsBuffering = NO;
+  
+    // Hold is being set to prevent cases where the player item unexpectedly reports as being ReadyForPlayback
+    // which could cause it to start playing. In iOS 6.0+ this can occur when audio interrupts end.
+    // This may be unnecessary when, in playerItemStatusDidChange, playback is only being started if the status
+    // actually changed, not any time the player item is reported as ready.
+    holdPlayback = YES;
 }
 
 - (void) togglePlayPause {
@@ -448,7 +454,7 @@ static PRXPlayer* sharedPlayerInstance;
                   [this playerSoftEndBoundaryTimeObserverAction];
                 }];
             }
-          
+        
             [self loadAndPlayPlayable:self.currentPlayable];
         } else if (self.player.currentItem.status == AVPlayerStatusFailed) {
             PRXLog(@"Player status failed %@", self.player.currentItem.error);
@@ -545,7 +551,7 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) observePlayerItem:(AVPlayerItem*)playerItem {
-    [playerItem addObserver:self forKeyPath:@"status" options:0 context:&PlayerItemStatusContext];
+    [playerItem addObserver:self forKeyPath:@"status" options:(NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld) context:&PlayerItemStatusContext];
     [playerItem addObserver:self forKeyPath:@"playbackBufferEmpty" options:0 context:&PlayerItemBufferEmptyContext];
     
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -680,6 +686,7 @@ static PRXPlayer* sharedPlayerInstance;
 #pragma mark Audio Session Interruption
 
 - (void) audioSessionInterruption:(NSNotification*)notification {
+    PRXLog(@"An audioSessionInterruption notification was received");
     if ([notification.userInfo[AVAudioSessionInterruptionTypeKey] isEqual:@(AVAudioSessionInterruptionTypeBegan)]) {
         [self audioSessionDidBeginInterruption:notification];
     } else if ([notification.userInfo[AVAudioSessionInterruptionTypeKey] isEqual:@(AVAudioSessionInterruptionTypeEnded)]) {
@@ -688,7 +695,7 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) audioSessionDidBeginInterruption:(NSNotification*)notification {
-    PRXLog(@"Audio session has been interrupted...");
+    PRXLog(@"Audio session has been interrupted... (Rate was %f)", self.player.rate);
     rateWhenAudioSessionDidBeginInterruption = self.player.rate;
     dateWhenAudioSessionDidBeginInterruption = NSDate.date;
 }
@@ -697,7 +704,8 @@ static PRXPlayer* sharedPlayerInstance;
     NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateWhenAudioSessionDidBeginInterruption];
     float interruptLimit = self.interruptResumeTimeLimit;
     PRXLog(@"Audio session has returned from interruption after %f seconds. User limit is %f seconds.", intervalSinceInterrupt, interruptLimit);
-    
+    PRXLog(@"Returning playback rate to %f", rateWhenAudioSessionDidBeginInterruption);
+  
     if (rateWhenAudioSessionDidBeginInterruption > 0.0f) {
         if (interruptLimit < 0
             || (intervalSinceInterrupt <= interruptLimit)) {
@@ -835,16 +843,19 @@ static PRXPlayer* sharedPlayerInstance;
 #pragma mark - AVAudioSession Delegate Methods
 
 - (void)beginInterruption {
-    [self audioSessionDidBeginInterruption:nil]; 
+    PRXLog(@"AVAudioSession Delegate beginInterruption");
+    [self audioSessionDidBeginInterruption:nil];
 }
 
 - (void)endInterruption {
+    PRXLog(@"AVAudioSession Delegate endInterruption");
     [[AVAudioSession sharedInstance] setActive:YES];
     [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
     [self audioSessionDidEndInterruption:nil];
 }
 
 - (void)endInterruptionWithFlags:(NSUInteger)flags {
+    PRXLog(@"AVAudioSession Delegate endInterruptionWithFlags");
     [self endInterruption];
 }
 

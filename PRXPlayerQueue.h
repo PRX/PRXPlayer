@@ -12,8 +12,7 @@
 
 @interface PRXPlayerQueue : NSMutableArray
 
-@property (nonatomic, weak) id<PRXPlayerQueueDelegate> delegate; 
-//@property (nonatomic, weak) id<PRXPlayerQueueDelegate> delegate;
+@property (nonatomic, weak) id<PRXPlayerQueueDelegate> delegate;
 @property (nonatomic) NSUInteger cursor;
 
 @property (nonatomic, readonly) BOOL isEmpty;

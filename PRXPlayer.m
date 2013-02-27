@@ -66,7 +66,7 @@ static PRXPlayer* sharedPlayerInstance;
         
         _reach = [Reachability reachabilityWithHostname:@"www.google.com"];
         
-        __block PRXPlayer *p = self;
+        __weak PRXPlayer *p = self;
         
         self.reach.reachableBlock = ^(Reachability *r) {
             PRXLog(@"REACHABLE");
@@ -442,7 +442,7 @@ static PRXPlayer* sharedPlayerInstance;
                 
                 NSValue* _boundry = [NSValue valueWithCMTime:boundry];
                 
-                __block id this = self;
+                __weak id this = self;
                 
                 playerSoftEndBoundaryTimeObserver = [self.player addBoundaryTimeObserverForTimes:@[ _boundry ] queue:dispatch_queue_create("playerQueue", NULL) usingBlock:^{
                   [this playerSoftEndBoundaryTimeObserverAction];

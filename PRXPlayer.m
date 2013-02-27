@@ -341,11 +341,15 @@ static PRXPlayer* sharedPlayerInstance;
 - (void) stop {
     PRXLog(@"Stop has been called on the audio player; resetting everything;");
   
+    playerIsBuffering = NO;
+    waitingForPlayableToBeReadyForPlayback = NO;
+    holdPlayback = NO;
+  
+    _currentPlayable = nil;
+  
     _currentPlayerItem = nil;
     _currentURLAsset = nil;
     _player = nil;
-  
-    playerIsBuffering = NO;
   
     [self reportPlayerStatusChangeToObservers];
 }

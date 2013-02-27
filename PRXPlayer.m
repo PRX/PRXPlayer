@@ -161,6 +161,7 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) setCurrentURLAsset:(AVURLAsset*)currentURLAsset {
     _currentURLAsset = currentURLAsset;
+  
     [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
     
     [self.currentURLAsset loadValuesAsynchronouslyForKeys:@[@"tracks"] completionHandler:^{
@@ -338,10 +339,15 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) stop {
-    self.currentPlayerItem = nil;
-    self.currentURLAsset = nil;
-    self.player = nil;
-    playerIsBuffering = NO; 
+    PRXLog(@"Stop has been called on the audio player; resetting everything;");
+  
+    _currentPlayerItem = nil;
+    _currentURLAsset = nil;
+    _player = nil;
+  
+    playerIsBuffering = NO;
+  
+    [self reportPlayerStatusChangeToObservers];
 }
 
 #pragma mark Target playback rates
@@ -413,8 +419,10 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) playerItemStatusDidChange:(NSDictionary*)change {
-    PRXLog(@"Player item status did change to %@", change); 
+    PRXLog(@"Player item status did change to %@", change);
+  
     [self reportPlayerStatusChangeToObservers];
+  
     if ([change[@"kind"] integerValue] == 1) {
         if (self.player.currentItem.status == AVPlayerStatusReadyToPlay) {
             waitingForPlayableToBeReadyForPlayback = NO;
@@ -447,7 +455,9 @@ static PRXPlayer* sharedPlayerInstance;
             
             if (retryCount < self.retryLimit) {
                 retryCount++;
+              
                 PRXLog(@"Retrying (retry number %i of %i)", retryCount, self.retryLimit);
+              
                 NSObject<PRXPlayable> *playableToRetry = self.currentPlayable;
                 [self stop];
                 
@@ -455,6 +465,7 @@ static PRXPlayer* sharedPlayerInstance;
             } else {
                 PRXLog(@"Playable failed to become ready even after retries.");
                 [self stop];
+                _currentPlayable = nil;
                 [self reportPlayerStatusChangeToObservers];
             }
             

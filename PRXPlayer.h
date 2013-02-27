@@ -28,6 +28,9 @@
 
 @property (nonatomic, strong, readonly) NSURL *audioURL;
 @property (nonatomic, strong, readonly) NSDictionary *mediaItemProperties;
+
+@optional
+
 @property (nonatomic, strong, readonly) NSDictionary *userInfo; 
 
 - (BOOL) isEqualToPlayable:(id<PRXPlayable>)playable;

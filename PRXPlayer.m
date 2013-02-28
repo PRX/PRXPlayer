@@ -349,6 +349,8 @@ static PRXPlayer* sharedPlayerInstance;
   
     _currentPlayerItem = nil;
     _currentURLAsset = nil;
+    [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+    playerSoftEndBoundaryTimeObserver = nil; 
     _player.rate = 0.0; 
     _player = nil;
   

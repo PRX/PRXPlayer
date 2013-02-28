@@ -349,6 +349,7 @@ static PRXPlayer* sharedPlayerInstance;
   
     _currentPlayerItem = nil;
     _currentURLAsset = nil;
+    _player.rate = 0.0; 
     _player = nil;
   
     [self reportPlayerStatusChangeToObservers];

@@ -397,7 +397,8 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) currentPlayableWillChange {
     if (self.currentPlayable) {
-        [self pause];
+        // [self pause];
+        self.player.rate = 0.0f;
         [self removeNonPersistentObservers:YES];
         [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
       

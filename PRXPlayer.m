@@ -163,6 +163,7 @@ static PRXPlayer* sharedPlayerInstance;
     _currentURLAsset = currentURLAsset;
   
     [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+    playerSoftEndBoundaryTimeObserver = nil;
     
     [self.currentURLAsset loadValuesAsynchronouslyForKeys:@[@"tracks"] completionHandler:^{
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -404,6 +405,7 @@ static PRXPlayer* sharedPlayerInstance;
         self.player.rate = 0.0f;
         [self removeNonPersistentObservers:YES];
         [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+        playerSoftEndBoundaryTimeObserver = nil;
       
       // This should not be necessary if self.player is being managed properly. Should only need to
       // kill observers on the AVPlayer when the player itself is killed (in stop).
@@ -546,6 +548,9 @@ static PRXPlayer* sharedPlayerInstance;
     [player removeTimeObserver:playerPeriodicTimeObserver];
     [player removeTimeObserver:playerLongPeriodicTimeObserver];
     [player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+    playerPeriodicTimeObserver = nil;
+    playerLongPeriodicTimeObserver = nil;
+    playerSoftEndBoundaryTimeObserver = nil;
 }
 
 - (void) observePlayerItem:(AVPlayerItem*)playerItem {

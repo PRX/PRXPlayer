@@ -66,7 +66,7 @@ static PRXPlayer* sharedPlayerInstance;
         
         _reach = [Reachability reachabilityWithHostname:@"www.google.com"];
         
-        __block PRXPlayer *p = self;
+        __weak PRXPlayer *p = self;
         
         self.reach.reachableBlock = ^(Reachability *r) {
             PRXLog(@"REACHABLE");
@@ -163,6 +163,7 @@ static PRXPlayer* sharedPlayerInstance;
     _currentURLAsset = currentURLAsset;
   
     [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+    playerSoftEndBoundaryTimeObserver = nil;
     
     [self.currentURLAsset loadValuesAsynchronouslyForKeys:@[@"tracks"] completionHandler:^{
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -355,6 +356,9 @@ static PRXPlayer* sharedPlayerInstance;
   
     _currentPlayerItem = nil;
     _currentURLAsset = nil;
+    [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+    playerSoftEndBoundaryTimeObserver = nil; 
+    _player.rate = 0.0; 
     _player = nil;
   
     [self reportPlayerStatusChangeToObservers];
@@ -403,9 +407,11 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) currentPlayableWillChange {
     if (self.currentPlayable) {
-        [self pause];
+        // [self pause];
+        self.player.rate = 0.0f;
         [self removeNonPersistentObservers:YES];
         [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+        playerSoftEndBoundaryTimeObserver = nil;
       
       // This should not be necessary if self.player is being managed properly. Should only need to
       // kill observers on the AVPlayer when the player itself is killed (in stop).
@@ -448,7 +454,7 @@ static PRXPlayer* sharedPlayerInstance;
                 
                 NSValue* _boundry = [NSValue valueWithCMTime:boundry];
                 
-                __block id this = self;
+                __weak id this = self;
                 
                 playerSoftEndBoundaryTimeObserver = [self.player addBoundaryTimeObserverForTimes:@[ _boundry ] queue:dispatch_queue_create("playerQueue", NULL) usingBlock:^{
                   [this playerSoftEndBoundaryTimeObserverAction];
@@ -548,6 +554,9 @@ static PRXPlayer* sharedPlayerInstance;
     [player removeTimeObserver:playerPeriodicTimeObserver];
     [player removeTimeObserver:playerLongPeriodicTimeObserver];
     [player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+    playerPeriodicTimeObserver = nil;
+    playerLongPeriodicTimeObserver = nil;
+    playerSoftEndBoundaryTimeObserver = nil;
 }
 
 - (void) observePlayerItem:(AVPlayerItem*)playerItem {

@@ -51,6 +51,8 @@
     id playerLongPeriodicTimeObserver; 
     NSDate *lastLongPeriodicTimeObserverAction;
     
+    NSUInteger backgroundKeepAliveTaskID;
+    
     BOOL holdPlayback;
     BOOL waitingForPlayableToBeReadyForPlayback;
     BOOL playerIsBuffering;

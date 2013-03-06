@@ -677,6 +677,26 @@ static PRXPlayer* sharedPlayerInstance;
     }
 }
 
+#pragma mark Keep Alive
+
+- (void) keepAliveInBackground {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [self beginBackgroundKeepAlive];
+        [NSThread sleepForTimeInterval:240];
+        [self endBackgroundKeepAlive];
+    });
+}
+- (void) beginBackgroundKeepAlive {
+    backgroundKeepAliveTaskID = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:^{
+        [self endBackgroundKeepAlive];
+    }];
+}
+
+- (void) endBackgroundKeepAlive {
+    [[UIApplication sharedApplication] endBackgroundTask:backgroundKeepAliveTaskID];
+    backgroundKeepAliveTaskID = UIBackgroundTaskInvalid;
+}
+
 #pragma mark Reachability Interruption
 
 - (void) reachDidBecomeUnreachable {

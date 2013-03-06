@@ -45,6 +45,10 @@ extern float LongPeriodicTimeObserver;
 - (void) playerItemDidPlayToEndTime:(NSNotification*)notification;
 - (void) playerItemDidJumpTime:(NSNotification*)notification;
 
+- (void) beginBackgroundKeepAlive;
+- (void) keepAliveInBackground;
+- (void) endBackgroundKeepAlive;
+
 - (void) audioSessionDidBeginInterruption:(NSNotification*)notification;
 - (void) audioSessionDidEndInterruption:(NSNotification*)notification;
 - (void) audioSessionInterruption:(NSNotification*)notification;

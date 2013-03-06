@@ -77,8 +77,14 @@ static PRXPlayer* sharedPlayerInstance;
             PRXLog(@"UNREACHABLE");
             [p reachDidBecomeUnreachable];
         };
-
         
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(reachabilityDidChange:)
+                                                     name:kReachabilityChangedNotification
+                                                   object:nil];
+        
+        [self.reach startNotifier];
+
         if (manageSession) {
             NSError *setCategoryError = nil;
             BOOL success = [[AVAudioSession sharedInstance]

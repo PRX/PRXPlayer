@@ -104,6 +104,10 @@ static PRXPlayer* sharedPlayerInstance;
     return self;
 }
 
+- (BOOL)allowsPlaybackViaWWAN {
+    return YES;
+}
+
 - (NSUInteger)retryLimit {
     return 3;
 }
@@ -679,6 +683,8 @@ static PRXPlayer* sharedPlayerInstance;
     PRXLog(@"Network has become unreachable...");
     rateWhenAudioSessionDidBeginInterruption = self.player.rate;
     dateWhenAudioSessionDidBeginInterruption = NSDate.date;
+    
+    [self keepAliveInBackground];
 }
 
 - (void) reachDidBecomeReachable {

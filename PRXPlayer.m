@@ -112,10 +112,6 @@ static PRXPlayer* sharedPlayerInstance;
     return 3;
 }
 
-- (BOOL)allowsPlaybackViaWWAN {
-    return YES;
-}
-
 - (void) setPlayer:(AVPlayer*)player {
     [self stopObservingPlayer:self.player];
     

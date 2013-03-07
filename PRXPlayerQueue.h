@@ -24,6 +24,28 @@
 
 #import <Foundation/Foundation.h>
 
+/**
+ `PRXPlayerQueue` is an array-like collection that is used to manage a list of playble objects intended for use in a `PRXQueuePlayer`. It implements the NSArray primative methods and all methods NSMutableArray requires for subclassing. Any other NSArray or NSMutableArray methods may not work as expected if used directly on a `PRXPlayerQueue`.
+ 
+ ## Cursor
+ 
+ The main difference between the `PRXAudioQueue` and a standard `NSMutableArray` is the cursor that is maintained by `PRXAudioQueue` to signify a position within the queue representing the currently playing item. The cursor is specifically managed such that it will never point to a position outside the current range of the collection. If something tries to move the cursor beyond the bounds of the collection, it will be set to the closet valid value. 
+ 
+ When the cursor is not defined, it will return `NSNotFound`. Any time the queue is empty the cursor will return `NSNotFound`. It is possible for the queue to include one or more items and have an undefined cursor.
+ 
+ ## Intended use
+ 
+ The only place a `PRXPlayerQueue` should be interacted with is inside a `PRXQueuePlayer` subclass. Application code is not intended to be aware of this class. Even though the `cursor` is exposed, it should not be get or set outside of a `PRXQueuePlayer` or subclass.
+ 
+ ## Delegate
+ 
+ When a delegate has been set for a `PRXAudioQueue`, it will be notified of changes to the following conditions of the queue:
+ 
+ - The `cursor` position
+ - The size of the queue
+ - The position of objects within the queue
+ */
+
 @protocol PRXPlayerQueueDelegate;
 
 @interface PRXPlayerQueue : NSMutableArray
@@ -35,8 +57,18 @@
 
 @end
 
+/**
+ The `PRXPlayerQueueDelegate` protocol defines a method that allows an object, usually a `PRXQueuePlayer`, to be notified when the queue changes.
+ */
 @protocol PRXPlayerQueueDelegate <NSObject>
 
+/**
+ Tells the delegate when the queue or queue position changes.
+ 
+ @param queue The queue object in which the change occured
+ 
+ @discussion The delegate typically implements this method to respond to changes resulting from user actions, or from triggered internally within the queue or the queue player.
+ */
 - (void) queueDidChange:(PRXPlayerQueue *)queue;
 
 @end

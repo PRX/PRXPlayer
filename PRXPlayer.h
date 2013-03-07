@@ -51,7 +51,6 @@
 
 - (BOOL) isEqualToPlayable:(id<PRXPlayable>)playable;
 
-@optional
 @property (nonatomic) NSTimeInterval duration;
 @property (nonatomic) NSTimeInterval playbackCursorPosition;
 @property (nonatomic, readonly) BOOL isStream; 

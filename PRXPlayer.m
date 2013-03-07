@@ -128,10 +128,6 @@ static PRXPlayer* sharedPlayerInstance;
     return 3;
 }
 
-- (BOOL)allowsPlaybackViaWWAN {
-    return YES;
-}
-
 - (void) setPlayer:(AVPlayer*)player {
     [self stopObservingPlayer:self.player];
     
@@ -741,9 +737,11 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) reachDidBecomeUnreachable {
     PRXLog(@"Network has become unreachable...");
-    rateWhenAudioSessionDidBeginInterruption = self.player.rate;
-    dateWhenAudioSessionDidBeginInterruption = NSDate.date;
-    
+    if (!dateWhenAudioSessionDidBeginInterruption) {
+        rateWhenAudioSessionDidBeginInterruption = self.player.rate;
+        dateWhenAudioSessionDidBeginInterruption = NSDate.date;
+    }
+  
     [self keepAliveInBackground];
 }
 
@@ -806,8 +804,10 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) audioSessionDidBeginInterruption:(NSNotification*)notification {
     PRXLog(@"Audio session has been interrupted... (Rate was %f)", self.player.rate);
-    rateWhenAudioSessionDidBeginInterruption = self.player.rate;
-    dateWhenAudioSessionDidBeginInterruption = NSDate.date;
+    if (!dateWhenAudioSessionDidBeginInterruption) {
+        rateWhenAudioSessionDidBeginInterruption = self.player.rate;
+        dateWhenAudioSessionDidBeginInterruption = NSDate.date;
+    }
 }
 
 - (void) audioSessionDidEndInterruption:(NSNotification*)notification {

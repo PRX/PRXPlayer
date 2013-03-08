@@ -80,26 +80,8 @@ static PRXPlayer* sharedPlayerInstance;
                                                    object:nil];
         }
         
-        _reach = [Reachability reachabilityWithHostname:@"www.google.com"];
-        
-        __weak PRXPlayer *p = self;
-        
-        self.reach.reachableBlock = ^(Reachability *r) {
-            PRXLog(@"REACHABLE");
-            [p reachDidBecomeReachable];
-        };
-        
-        self.reach.unreachableBlock = ^(Reachability *r) {
-            PRXLog(@"UNREACHABLE");
-            [p reachDidBecomeUnreachable];
-        };
-        
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(reachabilityDidChange:)
-                                                     name:kReachabilityChangedNotification
-                                                   object:nil];
-        
-        [self.reach startNotifier];
+        _reachManager = [[ReachabilityManager alloc] init];
+        _reachManager.delegate = self; 
 
         if (manageSession) {
             NSError *setCategoryError = nil;
@@ -309,8 +291,8 @@ static PRXPlayer* sharedPlayerInstance;
             }
         }
         
-        self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
-        if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
+        self.reachabilityManager.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
+        if (self.reachabilityManager.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
             if ([self.currentPlayable respondsToSelector:@selector(playbackCursorPosition)]) {
                 float startTimeSeconds = ((CMTimeGetSeconds(self.player.currentItem.duration) - self.currentPlayable.playbackCursorPosition < 3.0f) ? 0.0f : self.currentPlayable.playbackCursorPosition);
                 CMTime startTime = CMTimeMakeWithSeconds(startTimeSeconds, 1);
@@ -337,9 +319,9 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) handleNewPlayable:(id<PRXPlayable>)playable {
-    self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
+    self.reachabilityManager.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
     
-    if (self.reach.isReachable || [playable.audioURL isFileURL]) {
+    if (self.reachabilityManager.reach.isReachable || [playable.audioURL isFileURL]) {
         PRXLog(@"loading episode into player, playback will start async");
         self.currentPlayable = playable;
     } else {
@@ -534,7 +516,7 @@ static PRXPlayer* sharedPlayerInstance;
     if (self.currentPlayable) {
         if ([self.currentPlayable.audioURL isFileURL]) {
             PRXLog(@"...but was a local file; no need to restart.");
-        } else if (!self.reach.isReachable) {
+        } else if (!self.reachManager.reach.isReachable) {
             PRXLog(@"...and we don't have connectivity for a remote file/stream; flag for a restart when we do...");
             dateAtAudioPlaybackInterruption = [NSDate date];
         } else {
@@ -738,23 +720,30 @@ static PRXPlayer* sharedPlayerInstance;
 
 #pragma mark Reachability Interruption
 
-- (void) reachabilityDidChange:(NSNotification*)notification {
-    PRXLog(@"reachabilityDidChange: %@", notification);
-    NSLog(@"isReachable %i", [self.reach isReachable]);
-    NSLog(@"isReachableViaWWAN %i", [self.reach isReachableViaWWAN]);
-    NSLog(@"isReachableViaWiFi %i", [self.reach isReachableViaWiFi]);
+- (void) reachabilityDidChangeFrom:(NetworkStatus)oldReachability to:(NetworkStatus)newReachability
+{
+    if (newReachability == NotReachable) {
+        networkBecameUnreachable = YES;
+        [self keepAliveInBackground];
+    } else if (newReachability == ReachableViaWiFi) {
+        if (oldReachability == NotReachable) {      // if we just got a connection back, we may want to restart playing
+            [self restartPlaybackIfInterrupted];
+        } else if (oldReachability == ReachableViaWWAN) {  // we want to shift to wifi so we don't keep using 3G
+            if (![self.currentPlayable.audioURL isFileURL]) {
+                NSObject<PRXPlayable> *__currentPlayable = self.currentPlayable;
+                [self stop];
+                [self playPlayable:__currentPlayable];
+            }
+        }
+    } else if (newReachability == ReachableViaWWAN) {
+        if (oldReachability == NotReachable) {
+            [self restartPlaybackIfInterrupted];
+        }
+    }
 }
 
-- (void) reachDidBecomeUnreachable {
-    PRXLog(@"Network has become unreachable...");
-
-    networkBecameUnreachable = YES;
-    [self keepAliveInBackground];
-}
-
-- (void) reachDidBecomeReachable {
-    PRXLog(@"Network has become (or still is) reachable...");
-    
+- (void) restartPlaybackIfInterrupted
+{
     if (dateAtAudioPlaybackInterruption) {
         PRXLog(@"...and was playing before an interrupt...");
         NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateAtAudioPlaybackInterruption];
@@ -767,7 +756,7 @@ static PRXPlayer* sharedPlayerInstance;
             PRXLog(@"...and we're within time limit to restart; restarting.");
             NSObject<PRXPlayable> *__currentPlayable = self.currentPlayable;
             
-            if (networkBecameUnreachable && ![self.currentPlayable.audioURL isFileURL]) {
+            if (![self.currentPlayable.audioURL isFileURL]) {
                 // Kill the player if we lost connection, unless we're playing a local file
                 [self stop];
             }
@@ -777,8 +766,6 @@ static PRXPlayer* sharedPlayerInstance;
             dateAtAudioPlaybackInterruption = nil;
         }
     }
-  
-    networkBecameUnreachable = NO;
 }
 
 #pragma mark Audio Session Interruption
@@ -854,6 +841,7 @@ static PRXPlayer* sharedPlayerInstance;
 //            }
 //        }
 //    }
+
 }
 
 - (NSTimeInterval) interruptResumeTimeLimit {

@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 
 #import "PRXPlayer.h"
-#import "Reachability.h"
+#import "ReachabilityManager.h"
 #import <MediaPlayer/MediaPlayer.h>
 
 @interface PRXPlayer ()
@@ -41,7 +41,7 @@ extern float LongPeriodicTimeObserver;
 
 @property (nonatomic, readonly) float softEndBoundaryProgress; // between 0.0 and 1.0
 
-@property (nonatomic, strong, readonly) Reachability *reach;
+@property (nonatomic, strong, readonly) ReachabilityManager *reachManager;
 @property (nonatomic, readonly) BOOL allowsPlaybackViaWWAN;
 @property (nonatomic, readonly) NSTimeInterval interruptResumeTimeLimit; 
 

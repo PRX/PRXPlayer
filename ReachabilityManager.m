@@ -32,8 +32,7 @@
     return self;
 }
 
-- (void) reachabilityDidChange:(NSNotification *) not
-{
+- (void) reachabilityDidChange:(NSNotification *)notification {
     if (self.delegate && [self.delegate respondsToSelector:@selector(reachabilityDidChangeFrom:to:)]) {
         [self.delegate reachabilityDidChangeFrom:self.previousReachability to:self.reach.currentReachabilityStatus]; 
     }

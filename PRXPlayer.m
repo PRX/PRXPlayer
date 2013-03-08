@@ -775,6 +775,11 @@ static PRXPlayer* sharedPlayerInstance;
     // In cases where the audio was playing at the interrupt, the hold flag
     // simply won't be set, so it will resume in the play handler.
 
+    
+    if (dateAtAudioPlaybackInterruption) {
+        [self reloadAndPlayPlayable:self.currentPlayable];
+    }
+    
 }
 
 - (NSTimeInterval) interruptResumeTimeLimit {

@@ -248,6 +248,7 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) preparePlayable:(NSObject<PRXPlayable> *)playable {
 //    rateAtAudioPlaybackInterruption = NSNotFound;
+    NSLog(@"preparePlayable");
     dateAtAudioPlaybackInterruption = nil;
     
     if (![self isCurrentPlayable:playable]) {
@@ -281,8 +282,10 @@ static PRXPlayer* sharedPlayerInstance;
     } else if ([self rateForPlayable:self.currentPlayable] == 0.0f && !waitingForPlayableToBeReadyForPlayback) {
         PRXLog(@"Resume (or start) playing current playable");
         
+        NSLog(@"date -- %@", dateAtAudioPlaybackInterruption);
         if (dateAtAudioPlaybackInterruption) {
-            NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateAtAudioPlaybackInterruption]; 
+            NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateAtAudioPlaybackInterruption];
+            PRXLog(@"Appear to be recovering from an interrupt that's %fs old", intervalSinceInterrupt);
             BOOL withinResumeTimeLimit = (self.interruptResumeTimeLimit < 0) || (intervalSinceInterrupt <= self.interruptResumeTimeLimit);
 
             if (!withinResumeTimeLimit) {
@@ -531,7 +534,7 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) playerPeriodicTimeObserverAction {
-    NSLog(@">>>>>>>> BUFFER %f", self.buffer);
+//    NSLog(@">>>>>>>> BUFFER %f", self.buffer);
     [self reportPlayerTimeIntervalToObservers];
 }
 
@@ -753,6 +756,7 @@ static PRXPlayer* sharedPlayerInstance;
 - (void) audioSessionDidBeginInterruption:(NSNotification*)notification {
     PRXLog(@"Audio session has been interrupted %f...", self.player.rate);
     dateAtAudioPlaybackInterruption = NSDate.date;
+    [self keepAliveInBackground];
 }
 
 - (void) audioSessionDidEndInterruption:(NSNotification*)notification {
@@ -775,15 +779,17 @@ static PRXPlayer* sharedPlayerInstance;
     // In cases where the audio was playing at the interrupt, the hold flag
     // simply won't be set, so it will resume in the play handler.
 
-    
+    // Apparently sometimes the status change does not get reported as soon as
+    // the intr. ends, so we do need to coerce it in some cases.
+    // REAL DUMB.
     if (dateAtAudioPlaybackInterruption) {
-        [self reloadAndPlayPlayable:self.currentPlayable];
+        [self loadAndPlayPlayable:self.currentPlayable];
     }
     
 }
 
 - (NSTimeInterval) interruptResumeTimeLimit {
-    return 300;
+    return (60 * 4);
 }
 
 #pragma mark - Remote control

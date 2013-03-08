@@ -798,33 +798,53 @@ static PRXPlayer* sharedPlayerInstance;
 - (void) audioSessionDidEndInterruption:(NSNotification*)notification {
     PRXLog(@"Audio session has interruption ended...");
     
-    if (dateAtAudioPlaybackInterruption) {
-        PRXLog(@"...and was playing before interrupt...");
-        NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateAtAudioPlaybackInterruption];
-        BOOL withinResumeTimeLimit = (self.interruptResumeTimeLimit < 0) || (intervalSinceInterrupt <= self.interruptResumeTimeLimit);
-
-        if (!withinResumeTimeLimit) {
-            PRXLog(@"...but we're outside the time limit; will not restart.");
-            rateAtAudioPlaybackInterruption = NSNotFound;
-            dateAtAudioPlaybackInterruption = nil;
-        } else {
-            PRXLog(@"...and we're within time limit to restart...");
-            BOOL canReachPlayable = (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]);
-            
-            if (canReachPlayable) {
-                PRXLog(@"...and we it seems like we can access the media, trying to restart.");
-                // TODO This is probably not very performant for streaming files; could start without reloading
-                // this may be necessary if a stream can't pick back up after a long wait
-//                [self reloadAndPlayPlayable:self.currentPlayable];
-                self.player.rate = rateAtAudioPlaybackInterruption;
-                
-                rateAtAudioPlaybackInterruption = NSNotFound;
-                dateAtAudioPlaybackInterruption = nil;
-            } else {
-                PRXLog(@"...but media seems unreachable. Retry will happen when reachable.");
-            }
-        }
-    }
+    // Because of various bugs and unpredictable behavior, it is unreliable to
+    // try and recover from audio session interrupts.
+    //
+    // When something is loaded into AVPlayer and the interrupt ends, even without
+    // us doing anything, the player item's status will change. We need to make
+    // sure our handling of that change is appropriate
+    //
+    // If AVPlayer changes to consistently report player rate at the time of the
+    // interrupt, or it is able to report interrupts when the rate is 0, this
+    // could be handled more directly.
+    //
+    // As it is now, is the player is paused going into the interrupt, we kmow
+    // the hold flag is set, so when the status changes, even though it will
+    // go through the play handler, it won't start playback.
+    // In cases where the audio was playing at the interrupt, the hold flag
+    // simply won't be set, so it will resume in the play handler.
+  
+    
+    
+//
+//    if (dateAtAudioPlaybackInterruption) {
+//        PRXLog(@"...and was playing before interrupt...");
+//        NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateAtAudioPlaybackInterruption];
+//        BOOL withinResumeTimeLimit = (self.interruptResumeTimeLimit < 0) || (intervalSinceInterrupt <= self.interruptResumeTimeLimit);
+//
+//        if (!withinResumeTimeLimit) {
+//            PRXLog(@"...but we're outside the time limit; will not restart.");
+//            rateAtAudioPlaybackInterruption = NSNotFound;
+//            dateAtAudioPlaybackInterruption = nil;
+//        } else {
+//            PRXLog(@"...and we're within time limit to restart...");
+//            BOOL canReachPlayable = (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]);
+//            
+//            if (canReachPlayable) {
+//                PRXLog(@"...and we it seems like we can access the media, trying to restart.");
+//                // TODO This is probably not very performant for streaming files; could start without reloading
+//                // this may be necessary if a stream can't pick back up after a long wait
+////                [self reloadAndPlayPlayable:self.currentPlayable];
+//                self.player.rate = rateAtAudioPlaybackInterruption;
+//                
+//                rateAtAudioPlaybackInterruption = NSNotFound;
+//                dateAtAudioPlaybackInterruption = nil;
+//            } else {
+//                PRXLog(@"...but media seems unreachable. Retry will happen when reachable.");
+//            }
+//        }
+//    }
 }
 
 - (NSTimeInterval) interruptResumeTimeLimit {

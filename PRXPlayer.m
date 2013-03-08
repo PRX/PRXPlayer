@@ -277,66 +277,73 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) loadAndPlayPlayable:(id<PRXPlayable>)playable {
     if ([self isCurrentPlayable:playable]) {
-        if (![self.currentURLAsset.URL isEqual:playable.audioURL]) {
-            PRXLog(@"Switching to stream or local file because other is no longer available");
-            PRXLog(@"%@ %@", self.currentURLAsset, playable.audioURL);
-            waitingForPlayableToBeReadyForPlayback = YES;
-            if (!holdPlayback) { playerIsBuffering = YES; }
-            self.currentURLAsset = [AVURLAsset assetWithURL:playable.audioURL];
-        } else if ([self rateForPlayable:playable] > 0.0f) {
-            PRXLog(@"Playable is already playing");
-            waitingForPlayableToBeReadyForPlayback = NO;
-            return;
-        } else if ([self rateForPlayable:playable] == 0.0f && !waitingForPlayableToBeReadyForPlayback) {
-            PRXLog(@"Resume (or start) playing current playable");
-            
-            if ([self.currentPlayable respondsToSelector:@selector(playbackCursorPosition)]) { 
-                CMTime startTime;
-            
-                if (CMTimeGetSeconds(self.player.currentItem.duration) - self.currentPlayable.playbackCursorPosition < 3.0f) {
-                    startTime = CMTimeMake(0, 1);
-                } else {
-                    startTime = CMTimeMakeWithSeconds(self.currentPlayable.playbackCursorPosition, 1);
-                }
-            
-                self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
-                if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
-                    [self.player seekToTime:startTime completionHandler:^(BOOL finished){
-                        if (finished && !holdPlayback) {
-                            self.player.rate = self.rateForPlayback;
-                        } else {
-                            PRXLog(@"Not starting playback because of hold or seek interruption");
-                        }
-                    }];
-                } else {
-                    PRXLog(@"Aborting playback, network not reachable");
-                }
-            } else {
-                self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
-                if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
-                    if (!holdPlayback) { 
+        [self handleCurrentPlayable];
+    } else {
+        [self handleNewPlayable:playable];
+    }
+}
+
+- (void) handleCurrentPlayable {
+    if (![self.currentURLAsset.URL isEqual:self.currentPlayable.audioURL]) {
+        PRXLog(@"Switching to stream or local file because other is no longer available");
+        
+        waitingForPlayableToBeReadyForPlayback = YES;
+        if (!holdPlayback) { playerIsBuffering = YES; }
+        
+        self.currentURLAsset = [AVURLAsset assetWithURL:self.currentPlayable.audioURL];
+    } else if ([self rateForPlayable:self.currentPlayable] > 0.0f) {
+        PRXLog(@"Playable is already playing");
+        
+        waitingForPlayableToBeReadyForPlayback = NO;
+        return;
+    } else if ([self rateForPlayable:self.currentPlayable] == 0.0f && !waitingForPlayableToBeReadyForPlayback) {
+        PRXLog(@"Resume (or start) playing current playable");
+        
+        if (dateAtAudioPlaybackInterruption) {
+            NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateAtAudioPlaybackInterruption];
+            BOOL withinResumeTimeLimit = (self.interruptResumeTimeLimit < 0) || (intervalSinceInterrupt <= self.interruptResumeTimeLimit);
+
+            if (!withinResumeTimeLimit) {
+                PRXLog(@"Internal playback request after an interrupt, but waited too long; exiting.");
+                return;
+            }
+        }
+        
+        self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
+        if (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]) {
+            if ([self.currentPlayable respondsToSelector:@selector(playbackCursorPosition)]) {
+                float startTimeSeconds = ((CMTimeGetSeconds(self.player.currentItem.duration) - self.currentPlayable.playbackCursorPosition < 3.0f) ? 0.0f : self.currentPlayable.playbackCursorPosition);
+                CMTime startTime = CMTimeMakeWithSeconds(startTimeSeconds, 1);
+                
+                [self.player seekToTime:startTime completionHandler:^(BOOL finished){
+                    if (finished && !holdPlayback) {
                         self.player.rate = self.rateForPlayback;
                     } else {
-                        PRXLog(@"Not starting playback because of a hold or seek interruption");
+                        PRXLog(@"Not starting playback because of hold or seek interruption");
                     }
-                } else {
-                    PRXLog(@"Aborting playback, network not reachable");
-                }
-
+                }];
+            } else if (!holdPlayback) {
+                self.player.rate = self.rateForPlayback;
+            } else {
+                PRXLog(@"Not starting playback because of a hold");
             }
         } else {
-            // should never get here.
-            // generally, assuming the waiting flag is correct, we just want to keep waiting...
-            
+            PRXLog(@"Aborting playback, network not reachable");
         }
     } else {
-        self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
-        if (self.reach.isReachable || [playable.audioURL isFileURL]) {
-            PRXLog(@"loading episode into player, playback will start async");
-            self.currentPlayable = playable;
-        } else {
-            PRXLog(@"Aborting loading, network not reachable");
-        }
+        // should never get here.
+        // generally, assuming the waiting flag is correct, we just want to keep waiting...
+    }
+}
+
+- (void) handleNewPlayable:(id<PRXPlayable>)playable {
+    self.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
+    
+    if (self.reach.isReachable || [playable.audioURL isFileURL]) {
+        PRXLog(@"loading episode into player, playback will start async");
+        self.currentPlayable = playable;
+    } else {
+        PRXLog(@"Aborting loading, network not reachable");
     }
 }
 

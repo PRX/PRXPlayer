@@ -265,10 +265,8 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) preparePlayable:(NSObject<PRXPlayable> *)playable {
-    rateAtAudioPlaybackInterruption = NSNotFound;
+//    rateAtAudioPlaybackInterruption = NSNotFound;
     dateAtAudioPlaybackInterruption = nil;
-
-    restartPlaybackWhenBufferEmpties = NO;
     
     if (![self isCurrentPlayable:playable]) {
         waitingForPlayableToBeReadyForPlayback = NO;
@@ -532,7 +530,6 @@ static PRXPlayer* sharedPlayerInstance;
         } else if (!self.reach.isReachable) {
             PRXLog(@"...and we don't have connectivity for a remote file/stream; flag for a restart when we do...");
             dateAtAudioPlaybackInterruption = [NSDate date];
-            rateAtAudioPlaybackInterruption = 1.0f;
         } else {
             PRXLog(@"...and was a remote file, but we still have connectivity...");
             
@@ -565,7 +562,6 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) playerItemDidPlayToEndTime:(NSNotification*)notification {
-    restartPlaybackWhenBufferEmpties = NO;
     [self reportPlayerStatusChangeToObservers];
 }
 
@@ -757,7 +753,6 @@ static PRXPlayer* sharedPlayerInstance;
         
         if (!withinResumeTimeLimit) {
             PRXLog(@"...but we're outside the time limit; will not restart.");
-            rateAtAudioPlaybackInterruption = NSNotFound;
             dateAtAudioPlaybackInterruption = nil;
         } else {
             PRXLog(@"...and we're within time limit to restart; restarting.");
@@ -770,7 +765,6 @@ static PRXPlayer* sharedPlayerInstance;
             
             [self playPlayable:__currentPlayable];
             
-            rateAtAudioPlaybackInterruption = NSNotFound;
             dateAtAudioPlaybackInterruption = nil;
         }
     }
@@ -796,7 +790,7 @@ static PRXPlayer* sharedPlayerInstance;
     
     if (self.player.rate != 0.0) {
         PRXLog(@"Was playing @ %f at time of interrupt", self.player.rate);
-        rateAtAudioPlaybackInterruption = self.player.rate;
+        // This will not always actual reflect the rate before the interrupt; but sometimes it will.
         dateAtAudioPlaybackInterruption = NSDate.date;
     }    
 }

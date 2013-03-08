@@ -69,6 +69,7 @@ static PRXPlayer* sharedPlayerInstance;
 - (id) initWithAudioSessionManagement:(BOOL)manageSession {
     self = [super init];
     if (self) {
+        self.manageSession = manageSession; 
         _observers = [NSMutableArray array];
         
         [UIApplication.sharedApplication beginReceivingRemoteControlEvents];
@@ -83,23 +84,27 @@ static PRXPlayer* sharedPlayerInstance;
         _reachManager = [[ReachabilityManager alloc] init];
         _reachManager.delegate = self; 
 
-        if (manageSession) {
-            NSError *setCategoryError = nil;
-            BOOL success = [[AVAudioSession sharedInstance]
+        [self initAudioSession];
+    }
+    return self;
+}
+
+- (void) initAudioSession {
+    if (self.manageSession) {
+        NSError *setCategoryError = nil;
+        BOOL success = [[AVAudioSession sharedInstance]
                         setCategory: AVAudioSessionCategoryPlayback
                         error: &setCategoryError];
         
-            if (!success) { /* handle the error in setCategoryError */ }
-            NSError *activationError = nil;
-            success = [[AVAudioSession sharedInstance] setActive:YES error: &activationError];
-            if (!success) { /* handle the error in activationError */ }
+        if (!success) { /* handle the error in setCategoryError */ }
+        NSError *activationError = nil;
+        success = [[AVAudioSession sharedInstance] setActive:YES error: &activationError];
+        if (!success) { /* handle the error in activationError */ }
         
-            if (SYSTEM_VERSION_LESS_THAN(@"6.0")) {
-                [[AVAudioSession sharedInstance] setDelegate:self];
-            }
+        if (SYSTEM_VERSION_LESS_THAN(@"6.0")) {
+            [[AVAudioSession sharedInstance] setDelegate:self];
         }
     }
-    return self;
 }
 
 - (BOOL)allowsPlaybackViaWWAN {
@@ -700,7 +705,10 @@ static PRXPlayer* sharedPlayerInstance;
 - (void) keepAliveInBackground {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         [self beginBackgroundKeepAlive];
-        [NSThread sleepForTimeInterval:240];
+        for (int i = 0; i < 24; i++)  {
+            NSLog(@"keeping alive %d", i * 10);
+            [NSThread sleepForTimeInterval:10];
+        }
         [self endBackgroundKeepAlive];
     });
 }
@@ -719,6 +727,7 @@ static PRXPlayer* sharedPlayerInstance;
 #pragma mark Reachability Interruption
 
 - (void) reachabilityDidChangeFrom:(NetworkStatus)oldReachability to:(NetworkStatus)newReachability {
+    NSLog(@"reachability did change from %d to %d", oldReachability, newReachability);
     if (newReachability == NotReachable) {
         [self keepAliveInBackground];
     } else if (newReachability == ReachableViaWiFi) {
@@ -755,6 +764,7 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) audioSessionDidBeginInterruption:(NSNotification*)notification {
     PRXLog(@"Audio session has been interrupted %f...", self.player.rate);
+    [self keepAliveInBackground];
     dateAtAudioPlaybackInterruption = NSDate.date;
     [self keepAliveInBackground];
 }
@@ -779,9 +789,12 @@ static PRXPlayer* sharedPlayerInstance;
     // In cases where the audio was playing at the interrupt, the hold flag
     // simply won't be set, so it will resume in the play handler.
 
+    [self initAudioSession];
+    
     // Apparently sometimes the status change does not get reported as soon as
     // the intr. ends, so we do need to coerce it in some cases.
     // REAL DUMB.
+
     if (dateAtAudioPlaybackInterruption) {
         [self loadAndPlayPlayable:self.currentPlayable];
     }

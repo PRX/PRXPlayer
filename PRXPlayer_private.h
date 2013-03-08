@@ -47,6 +47,8 @@ extern float LongPeriodicTimeObserver;
 
 @property (nonatomic, readonly) NSUInteger retryLimit;
 
+@property BOOL manageSession; 
+
 - (void) loadAndPlayPlayable:(id<PRXPlayable>)playable;
 
 - (void) currentPlayableWillChange;

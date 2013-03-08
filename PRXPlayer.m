@@ -265,8 +265,8 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) preparePlayable:(NSObject<PRXPlayable> *)playable {
-    rateWhenAudioSessionDidBeginInterruption = NSNotFound;
-    dateWhenAudioSessionDidBeginInterruption = nil;
+    rateAtAudioPlaybackInterruption = NSNotFound;
+    dateAtAudioPlaybackInterruption = nil;
 
     restartPlaybackWhenBufferEmpties = NO;
     
@@ -524,26 +524,31 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) playerItemBufferEmptied:(NSDictionary*)change {
+    PRXLog(@"Buffer emptied...");
     
-    self.player.rate = 0;
-    PRXLog(@"Buffer emptied, rate %f", self.player.rate);
-    // try again?
-    // need to make sure the buffer isn't emptying when nothing is actually playing
-    // resulting in something starting on its own
-    
-    // by stopping here we lose any ability for AVPlayer to recover
-    if (self.reach.isReachable
-        && restartPlaybackWhenBufferEmpties == YES) {
-        NSObject<PRXPlayable> *playableToRetry = self.currentPlayable;
-        [self stop];
-        
-        [self playPlayable:playableToRetry];
-
-//        [self reloadAndPlayPlayable:self.currentPlayable];
+    if (self.currentPlayable) {
+        if ([self.currentPlayable.audioURL isFileURL]) {
+            PRXLog(@"...but was a local file; no need to restart.");
+        } else if (!self.reach.isReachable) {
+            PRXLog(@"...and we don't have connectivity for a remote file/stream; flag for a restart when we do...");
+            dateAtAudioPlaybackInterruption = [NSDate date];
+            rateAtAudioPlaybackInterruption = 1.0f;
+        } else {
+            PRXLog(@"...and was a remote file, but we still have connectivity...");
+            
+            if (networkBecameUnreachable) {
+                PRXLog(@"...but at some point we lost connectivity, so try again right now...");
+                [self reloadAndPlayPlayable:self.currentPlayable];
+            } else {
+                PRXLog(@"...and we never lost connectivity, not sure what happened. Try again?");
+                [self reloadAndPlayPlayable:self.currentPlayable];                
+            }
+        }
     }
 }
 
 - (void) playerPeriodicTimeObserverAction {
+    NSLog(@">>>>>>>> BUFFER %f", self.buffer);
     [self reportPlayerTimeIntervalToObservers];
 }
 
@@ -737,95 +742,95 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) reachDidBecomeUnreachable {
     PRXLog(@"Network has become unreachable...");
-    if (!dateWhenAudioSessionDidBeginInterruption) {
-        rateWhenAudioSessionDidBeginInterruption = self.player.rate;
-        dateWhenAudioSessionDidBeginInterruption = NSDate.date;
-    }
-  
+
+    networkBecameUnreachable = YES;
     [self keepAliveInBackground];
 }
 
 - (void) reachDidBecomeReachable {
-    NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateWhenAudioSessionDidBeginInterruption];
-    float interruptLimit = self.interruptResumeTimeLimit;
-    PRXLog(@"Reachability was (re)gained after %f seconds. User limit is %f seconds.", intervalSinceInterrupt, interruptLimit);
-  
-    if (self.player.rate > 0.0f) {
-        restartPlaybackWhenBufferEmpties = YES;
-        PRXLog(@"Was playing when reachDidBecomeReachable. Set flag to restart playback if buffer empties.");
-    } else {
-        if (rateWhenAudioSessionDidBeginInterruption == NSNotFound
-            || rateWhenAudioSessionDidBeginInterruption > 0) {
-            restartPlaybackWhenBufferEmpties = YES;
-            PRXLog(@"Playback was playing before reach interrupt (or no interrupt). Set buffer empty flag and try to restart if necessary.");
-            restartPlaybackWhenBufferEmpties = YES;
-            
-            if (rateWhenAudioSessionDidBeginInterruption > 0.0f) {
-                if (interruptLimit < 0
-                    || (intervalSinceInterrupt <= interruptLimit)) {
-                    PRXLog(@"Resuming playback after unreachable; limit not surpassed. rate = %f", rateWhenAudioSessionDidBeginInterruption);
-                    if (self.buffer > 0) {
-                        self.player.rate = rateWhenAudioSessionDidBeginInterruption;
-                    } else {
-                        NSObject<PRXPlayable> *playableToRetry = self.currentPlayable;
-                        [self stop];
-                        
-                        [self playPlayable:playableToRetry];
-                    }
-                }
-            }
+    PRXLog(@"Network has become (or still is) reachable...");
+    
+    if (dateAtAudioPlaybackInterruption) {
+        PRXLog(@"...and was playing before an interrupt...");
+        NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateAtAudioPlaybackInterruption];
+        BOOL withinResumeTimeLimit = (self.interruptResumeTimeLimit < 0) || (intervalSinceInterrupt <= self.interruptResumeTimeLimit);
+        
+        if (!withinResumeTimeLimit) {
+            PRXLog(@"...but we're outside the time limit; will not restart.");
+            rateAtAudioPlaybackInterruption = NSNotFound;
+            dateAtAudioPlaybackInterruption = nil;
         } else {
-            PRXLog(@"Player was paused before reach interrupt; will likely die, so kill it now and start over.");
+            PRXLog(@"...and we're within time limit to restart; restarting.");
+            NSObject<PRXPlayable> *__currentPlayable = self.currentPlayable;
             
-            if (self.currentPlayable) {
-                NSObject<PRXPlayable> *playableToRetry = self.currentPlayable;
+            if (networkBecameUnreachable && ![self.currentPlayable.audioURL isFileURL]) {
+                // Kill the player if we lost connection, unless we're playing a local file
                 [self stop];
-                
-                [self loadPlayable:playableToRetry];
             }
+            
+            [self playPlayable:__currentPlayable];
+            
+            rateAtAudioPlaybackInterruption = NSNotFound;
+            dateAtAudioPlaybackInterruption = nil;
         }
     }
-
-    
-    rateWhenAudioSessionDidBeginInterruption = NSNotFound;
-    dateWhenAudioSessionDidBeginInterruption = nil;
+  
+    networkBecameUnreachable = NO;
 }
 
 #pragma mark Audio Session Interruption
 
 - (void) audioSessionInterruption:(NSNotification*)notification {
     PRXLog(@"An audioSessionInterruption notification was received");
-    if ([notification.userInfo[AVAudioSessionInterruptionTypeKey] isEqual:@(AVAudioSessionInterruptionTypeBegan)]) {
+    id interruptionTypeKey = notification.userInfo[AVAudioSessionInterruptionTypeKey];
+    
+    if ([interruptionTypeKey isEqual:@(AVAudioSessionInterruptionTypeBegan)]) {
         [self audioSessionDidBeginInterruption:notification];
-    } else if ([notification.userInfo[AVAudioSessionInterruptionTypeKey] isEqual:@(AVAudioSessionInterruptionTypeEnded)]) {
+    } else if ([interruptionTypeKey isEqual:@(AVAudioSessionInterruptionTypeEnded)]) {
         [self audioSessionDidEndInterruption:notification];
     }
 }
 
 - (void) audioSessionDidBeginInterruption:(NSNotification*)notification {
-    PRXLog(@"Audio session has been interrupted... (Rate was %f)", self.player.rate);
-    if (!dateWhenAudioSessionDidBeginInterruption) {
-        rateWhenAudioSessionDidBeginInterruption = self.player.rate;
-        dateWhenAudioSessionDidBeginInterruption = NSDate.date;
-    }
+    PRXLog(@"Audio session has been interrupted %f...", self.player.rate);
+    
+    if (self.player.rate != 0.0) {
+        PRXLog(@"Was playing @ %f at time of interrupt", self.player.rate);
+        rateAtAudioPlaybackInterruption = self.player.rate;
+        dateAtAudioPlaybackInterruption = NSDate.date;
+    }    
 }
 
 - (void) audioSessionDidEndInterruption:(NSNotification*)notification {
-    NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateWhenAudioSessionDidBeginInterruption];
-    float interruptLimit = self.interruptResumeTimeLimit;
-    PRXLog(@"Audio session has returned from interruption after %f seconds. User limit is %f seconds.", intervalSinceInterrupt, interruptLimit);
-    PRXLog(@"Returning playback rate to %f", rateWhenAudioSessionDidBeginInterruption);
-  
-    if (rateWhenAudioSessionDidBeginInterruption > 0.0f) {
-        if (interruptLimit < 0
-            || (intervalSinceInterrupt <= interruptLimit)) {
-            PRXLog(@"[Resuming playback after interrupt; limit not surpassed.");
-            self.player.rate = rateWhenAudioSessionDidBeginInterruption;
+    PRXLog(@"Audio session has interruption ended...");
+    
+    if (dateAtAudioPlaybackInterruption) {
+        PRXLog(@"...and was playing before interrupt...");
+        NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateAtAudioPlaybackInterruption];
+        BOOL withinResumeTimeLimit = (self.interruptResumeTimeLimit < 0) || (intervalSinceInterrupt <= self.interruptResumeTimeLimit);
+
+        if (!withinResumeTimeLimit) {
+            PRXLog(@"...but we're outside the time limit; will not restart.");
+            rateAtAudioPlaybackInterruption = NSNotFound;
+            dateAtAudioPlaybackInterruption = nil;
+        } else {
+            PRXLog(@"...and we're within time limit to restart...");
+            BOOL canReachPlayable = (self.reach.isReachable || [self.currentPlayable.audioURL isFileURL]);
+            
+            if (canReachPlayable) {
+                PRXLog(@"...and we it seems like we can access the media, trying to restart.");
+                // TODO This is probably not very performant for streaming files; could start without reloading
+                // this may be necessary if a stream can't pick back up after a long wait
+//                [self reloadAndPlayPlayable:self.currentPlayable];
+                self.player.rate = rateAtAudioPlaybackInterruption;
+                
+                rateAtAudioPlaybackInterruption = NSNotFound;
+                dateAtAudioPlaybackInterruption = nil;
+            } else {
+                PRXLog(@"...but media seems unreachable. Retry will happen when reachable.");
+            }
         }
     }
-    
-    rateWhenAudioSessionDidBeginInterruption = NSNotFound;
-    dateWhenAudioSessionDidBeginInterruption = nil;
 }
 
 - (NSTimeInterval) interruptResumeTimeLimit {

@@ -72,9 +72,10 @@
     BOOL waitingForPlayableToBeReadyForPlayback;
     BOOL playerIsBuffering;
     BOOL restartPlaybackWhenBufferEmpties;
+    BOOL networkBecameUnreachable;
   
-    float rateWhenAudioSessionDidBeginInterruption;
-    NSDate* dateWhenAudioSessionDidBeginInterruption;
+    float rateAtAudioPlaybackInterruption;
+    NSDate* dateAtAudioPlaybackInterruption;
     
     NSUInteger retryCount;
 }

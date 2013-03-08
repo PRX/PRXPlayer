@@ -542,6 +542,8 @@ static PRXPlayer* sharedPlayerInstance;
             }
         }
     }
+  
+    [self reportPlayerStatusChangeToObservers];
 }
 
 - (void) playerPeriodicTimeObserverAction {

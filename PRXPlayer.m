@@ -697,7 +697,10 @@ static PRXPlayer* sharedPlayerInstance;
 - (void) keepAliveInBackground {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         [self beginBackgroundKeepAlive];
-        [NSThread sleepForTimeInterval:240];
+        for (int i = 0; i < 24; i++)  {
+            [NSThread sleepForTimeInterval:10];
+            NSLog(@"keeping alive %d", i * 10);
+        }
         [self endBackgroundKeepAlive];
     });
 }
@@ -716,6 +719,7 @@ static PRXPlayer* sharedPlayerInstance;
 #pragma mark Reachability Interruption
 
 - (void) reachabilityDidChangeFrom:(NetworkStatus)oldReachability to:(NetworkStatus)newReachability {
+    NSLog(@"reachability did change from %d to %d", oldReachability, newReachability);
     if (newReachability == NotReachable) {
         [self keepAliveInBackground];
     } else if (newReachability == ReachableViaWiFi) {

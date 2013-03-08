@@ -69,9 +69,6 @@ extern float LongPeriodicTimeObserver;
 - (void) audioSessionDidEndInterruption:(NSNotification*)notification;
 - (void) audioSessionInterruption:(NSNotification*)notification;
 
-- (void) reachDidBecomeUnreachable;
-- (void) reachDidBecomeReachable;
-
 - (void) observePlayer:(AVPlayer*)player;
 - (void) stopObservingPlayer:(AVPlayer*)player;
 

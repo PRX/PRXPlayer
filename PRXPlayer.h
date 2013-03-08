@@ -24,6 +24,7 @@
 
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
+#import "ReachabilityManager.h"
 
 #define PRXDEBUG 1
 
@@ -59,7 +60,7 @@
 
 @protocol PRXPlayerObserver;
 
-@interface PRXPlayer : UIResponder <AVAudioSessionDelegate> {
+@interface PRXPlayer : UIResponder <AVAudioSessionDelegate,ReachabilityManagerDelegate> {
     // used for determining when the player crosses a meaningful boundary
     id playerSoftEndBoundaryTimeObserver;
     id playerPeriodicTimeObserver;

@@ -144,7 +144,13 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (BOOL) isCurrentPlayable:(NSObject<PRXPlayable> *)playable {
-    return [playable isEqualToPlayable:self.currentPlayable];
+    if ([self.currentPlayable respondsToSelector:@selector(isEqualToPlayable:)]
+        && [playable respondsToSelector:@selector(isEqualToPlayable:)]) {
+        return [playable isEqualToPlayable:self.currentPlayable];
+    } else {
+        return [playable.audioURL isEqual:self.currentPlayable.audioURL];
+    }
+    
 }
 
 - (void) setCurrentPlayerItem:(AVPlayerItem*)currentPlayerItem {

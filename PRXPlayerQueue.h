@@ -51,9 +51,47 @@
 @interface PRXPlayerQueue : NSMutableArray
 
 @property (nonatomic, weak) id<PRXPlayerQueueDelegate> delegate;
-@property (nonatomic) NSUInteger cursor;
+@property (nonatomic) NSUInteger position;
 
 @property (nonatomic, readonly) BOOL isEmpty;
+
+
+///---------------------------------------
+/// @name NSArray primative methods
+///---------------------------------------
+
+/**
+ Returns the object located at _index_.
+ 
+ @param index An index within or outside the bounds of the array.
+ 
+ @return The object located at _index_, or `nil`.
+ 
+ @discussion If _index_ is beyond the end of the array `nil` is returned.
+ */
+- (id)objectAtIndex:(NSUInteger)index;
+
+///---------------------------------------
+/// @name NSMutableArray methods
+///---------------------------------------
+
+/**
+ Inserts the given object at the specified index of the mutable ordered set.
+ 
+ @discussion Unlike `insertObject:atIndex:` for `NSMutableArray`, if _idx_ is greater than the number of elements in the queue _object_ will be inserted at the end of the collection.
+ 
+ If the index is less than or equal to the current queue position, the position will be incremented so the selected element does not change.
+ */
+- (void)insertObject:(id)anObject atIndex:(NSUInteger)index;
+
+/**
+ Removes the object at _index_.
+ 
+ @discussion If the queue becomes empty after remove the object, the queue's position becomes `NSNotFound`.
+ 
+ If the index is less than the current queue position, the position will be decremented so the selected element does not change.
+ */
+- (void)removeObjectAtIndex:(NSUInteger)index;
 
 @end
 

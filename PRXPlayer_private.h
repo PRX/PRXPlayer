@@ -50,6 +50,7 @@ extern float LongPeriodicTimeObserver;
 @property BOOL manageSession; 
 
 - (void) loadAndPlayPlayable:(id<PRXPlayable>)playable;
+- (void) preparePlayable:(id<PRXPlayable>)playable;
 
 - (void) currentPlayableWillChange;
 - (void) playerStatusDidChange:(NSDictionary*)change;

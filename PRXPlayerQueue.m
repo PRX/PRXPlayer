@@ -26,12 +26,14 @@
 
 @interface PRXPlayerQueue ()
 
-@property (nonatomic, strong) NSMutableArray *backingStore;
+@property (nonatomic, strong) NSMutableArray *collection;
 
-@property (nonatomic) NSUInteger lastCursor;
+@property (nonatomic) NSUInteger lastPosition;
 
-- (void) incrementCursor;
-- (void) decrementCursor;
+- (void) incrementPosition;
+- (void) decrementPosition;
+
+- (void) notifyDelegate; 
 
 @end
 
@@ -40,119 +42,128 @@
 - (id) init {
     self = [super init];
     if (self) {
-        self.backingStore = [NSMutableArray arrayWithCapacity:10];
-        self.cursor = NSNotFound;
+        self.collection = [NSMutableArray arrayWithCapacity:10];
     }
     return self;
 }
 
-- (NSUInteger) lastCursor {
-    if (self.count == 0) {
-        return NSNotFound;
-    } else {
-        return (self.count - 1);
-    }
+#pragma mark - Backing collection
+
+- (void)setCollection:(NSMutableArray*)collection {
+    _collection = collection;
+    self.position = (collection.count == 0 ? NSNotFound : 0);
 }
 
-- (void) setCursor:(NSUInteger)cursor {
-    if (cursor == NSNotFound) {
-        _cursor = cursor;
-    } else if (cursor <= self.lastCursor) {
-        _cursor = cursor;
-    }
-    
-    [self notifyDelegate];
-}
-
-- (void) incrementCursor {
-    if (self.cursor == NSNotFound) {
-        self.cursor = 0;
-    } else {
-        self.cursor = self.cursor + 1;
-    }
-}
-
-- (void) decrementCursor {
-    if (self.cursor == 0) {
-        self.cursor = NSNotFound;
-    } else {
-        self.cursor = self.cursor - 1;
-    }
-}
-
-- (BOOL) isEmpty {
+- (BOOL)isEmpty {
     return (self.count == 0);
 }
 
-- (void) insertObject:(id)anObject atIndex:(NSUInteger)index {
-    if (index >= self.backingStore.count) {
-        index = self.backingStore.count;
-    }
-    
-    [self.backingStore insertObject:anObject atIndex:index];
-    
-    if (index <= self.cursor || self.cursor == NSNotFound) {
-        [self incrementCursor];
-    }
-    
-    [self notifyDelegate]; 
+#pragma - Position manipulation
+
+- (void)setPosition:(NSUInteger)position {
+    _position = ((position == NSNotFound || self.isEmpty) ? NSNotFound : MAX(0, MIN(position, self.lastPosition)));
+    [self notifyDelegate];
 }
 
-- (void) removeObjectAtIndex:(NSUInteger)index {
-    if (index >= self.backingStore.count) { return; }
-    
-    [self.backingStore removeObjectAtIndex:index];
-    
-    if (index < self.cursor) {
-        [self decrementCursor];
+- (void)incrementPosition {
+    self.position = (self.position == NSNotFound ? 0 : (self.position + 1));
+}
+
+- (void)decrementPosition {
+    self.position = (self.position == NSNotFound ? NSNotFound : (self.position - 1));;
+}
+
+- (NSUInteger)lastPosition {
+    return (self.count == 0 ? NSNotFound : (self.count - 1));
+}
+
+
+#pragma mark - NSArray primative methods
+
+- (NSUInteger)count {
+    return self.collection.count;
+}
+
+- (id)objectAtIndex:(NSUInteger)index {
+    if (index != NSNotFound && index < self.collection.count) {
+        return [self.collection objectAtIndex:index];
     }
     
-    if (self.cursor > self.lastCursor) {
-        self.cursor = self.lastCursor;
+    return nil;
+}
+
+#pragma mark - NSMutableArray methods
+
+- (void)insertObject:(id)anObject atIndex:(NSUInteger)index {
+    [self.collection insertObject:anObject atIndex:MIN(index, self.collection.count)];
+    
+    // TODO If things are allowed to play without being in the queue
+    // (like if the current item is dequeued), incrementing the counter
+    // here when NSNotFound could be bad
+    if (index <= self.position || self.position == NSNotFound) {
+        // If an item is inserted before the current item,
+        // shift the cursor to follow the current item.
+        // Or if the cursor hasn't been set, increment it
+        // to get it to 0.
+        [self incrementPosition];
     }
     
     [self notifyDelegate];
 }
 
-- (void) addObject:(id)anObject {
-    [self.backingStore addObject:anObject];
-    [self notifyDelegate]; 
-}
-
-- (void) removeAllObjects {
-    [self.backingStore removeAllObjects];
-    self.cursor = NSNotFound;
-    [self notifyDelegate]; 
-}
-
-- (void) removeLastObject {
-    [self.backingStore removeLastObject];
-
-    if (self.cursor > self.lastCursor) {
-        self.cursor = self.lastCursor;
+- (void)removeObjectAtIndex:(NSUInteger)index {
+    if (index >= self.collection.count) { return; }
+    
+    [self.collection removeObjectAtIndex:index];
+    
+    if (self.position != NSNotFound) {
+        if (index < self.position) {
+            // When removing an item below the current cursor,
+            // the current item will shift down one, so we need
+            // to make the cursor follow it
+            [self decrementPosition];
+        }
+        
+        if (self.position > self.lastPosition) {
+            // If the cursor ever gets out of bounds, move it
+            // back in bounds. This can happen when the cursor
+            // is on the last item, and it is removed.
+            self.position = self.lastPosition;
+        }    
     }
     
-    [self notifyDelegate]; 
-}
-
-- (void) replaceObjectAtIndex:(NSUInteger)index withObject:(id)anObject {
-    [self.backingStore replaceObjectAtIndex:index withObject:anObject];
-    [self notifyDelegate]; 
-}
-
-- (NSUInteger) count {
-    return [self.backingStore count]; 
-}
-
-- (id) objectAtIndex:(NSUInteger)index {
-    if (index != NSNotFound && index < self.backingStore.count) {
-        return [self.backingStore objectAtIndex:index];
+    if (self.isEmpty) {
+        self.position = NSNotFound;
     }
-    return nil;
+    
+    [self notifyDelegate];
 }
 
-- (void) notifyDelegate {
-    if (self.delegate && [self.delegate respondsToSelector:@selector(queueDidChange:)]) {
+- (void)addObject:(id)anObject {
+    [self.collection addObject:anObject];
+    
+    [self notifyDelegate];
+}
+
+- (void)removeAllObjects {
+    [self.collection removeAllObjects];
+    self.position = NSNotFound;
+    
+    [self notifyDelegate];
+}
+
+- (void)removeLastObject {
+    [self removeObjectAtIndex:self.lastPosition];
+}
+
+#pragma mark - Delegate and observers
+
+- (void)observeValueForKeyPath:(NSString*)keyPath ofObject:(id)object change:(NSDictionary*)change context:(void*)context {
+    [self notifyDelegate];
+}
+
+- (void)notifyDelegate {
+    if (self.delegate) {
         [self.delegate queueDidChange:self];
     }
 }

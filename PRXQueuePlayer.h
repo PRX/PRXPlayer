@@ -31,13 +31,18 @@
 @property (nonatomic, readonly) BOOL hasNext;
 @property (nonatomic, readonly) BOOL hasPrevious;
 
+- (BOOL) canMoveToQueuePosition:(NSUInteger)position;
+- (void) moveToQueuePosition:(NSUInteger)position;
+- (void) moveToFirst;
 - (void) moveToNext;
 - (void) moveToPrevious;
+- (void) moveToLast; 
+
+- (void) playFromQueuePosition:(NSUInteger)position;
+- (void) playFirst;
 - (void) playNext;
 - (void) playPrevious;
-- (void) moveToQueuePosition:(NSUInteger)position;
-- (void) playQueuePosition:(NSUInteger)position;
-- (BOOL) hasQueuePosition:(NSUInteger)position;
+- (void) playLast;
 
 - (void) enqueue:(id<PRXPlayable>)playable; 
 - (void) enqueue:(id<PRXPlayable>)playable atPosition:(NSUInteger)position;
@@ -49,13 +54,14 @@
 - (void) movePlayableFromPosition:(NSUInteger)inPosition toPosition:(NSUInteger)outPosition;
 
 - (void) enqueuePlayables:(NSArray *)playables;
+- (void) enqueuePlayables:(NSArray *)playables atPosition:(NSUInteger)position; 
 
 - (void) emptyQueue;
 
 - (BOOL) queueContainsPlayable:(id<PRXPlayable>)playable;
-- (int) firstQueuePositionForObject:(id<PRXPlayable>)playable;
-- (int) nextQueuePositionForObject:(id<PRXPlayable>)playable;
-- (NSIndexSet *) allQueuePositionsForObject:(id<PRXPlayable>)playable;
+- (NSUInteger) firstQueuePositionForPlayable:(id<PRXPlayable>)playable;
+- (NSUInteger) nextQueuePositionForPlayable:(id<PRXPlayable>)playable;
+- (NSIndexSet *) allQueuePositionsForPlayable:(id<PRXPlayable>)playable;
 - (id<PRXPlayable>) playableAtCurrentQueuePosition;
 - (id<PRXPlayable>) playableAtQueuePosition:(NSUInteger)position;
 

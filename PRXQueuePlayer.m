@@ -59,7 +59,7 @@
 }
 
 - (void) playerItemStatusDidChange:(NSDictionary*)change {
-    PRXLog(@"MMQueuePlayer item status did change to %@", change);
+    PRXLog(@"QueuePlayer item status did change to %@", change);
     NSUInteger keyValueChangeKind = [change[NSKeyValueChangeKindKey] integerValue];
     
     if (keyValueChangeKind == NSKeyValueChangeSetting && self.player.currentItem.status == AVPlayerStatusFailed) {
@@ -117,7 +117,11 @@
 
 - (void)moveToQueuePosition:(NSUInteger)position {
     if ([self canMoveToQueuePosition:position]) {
-        self.queue.position = position;
+        if (self.player.rate != 0.0f) {
+            [self playFromQueuePosition:position];
+        } else {
+            self.queue.position = position;
+        }
     }
 }
 
@@ -169,7 +173,6 @@
 - (void)playLast {
     [self playFromQueuePosition:(self.queue.count - 1)];
 }
-
 
 #pragma mark - Queue manipulation
 

@@ -296,7 +296,6 @@ static PRXPlayer* sharedPlayerInstance;
     } else if ([self rateForPlayable:self.currentPlayable] == 0.0f && !waitingForPlayableToBeReadyForPlayback) {
         PRXLog(@"Resume (or start) playing current playable");
         
-        NSLog(@"date -- %@", dateAtAudioPlaybackInterruption);
         if (dateAtAudioPlaybackInterruption) {
             NSTimeInterval intervalSinceInterrupt = [NSDate.date timeIntervalSinceDate:dateAtAudioPlaybackInterruption];
             PRXLog(@"Appear to be recovering from an interrupt that's %fs old", intervalSinceInterrupt);

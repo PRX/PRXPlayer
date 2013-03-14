@@ -117,10 +117,10 @@
 
 - (void)moveToQueuePosition:(NSUInteger)position {
     if ([self canMoveToQueuePosition:position]) {
+        self.queue.position = position;
+        
         if (self.player.rate != 0.0f) {
             [self playFromQueuePosition:position];
-        } else {
-            self.queue.position = position;
         }
     }
 }
@@ -149,7 +149,9 @@
 
 - (void)playFromQueuePosition:(NSUInteger)position {
     if ([self canMoveToQueuePosition:position]) {
-        [self moveToQueuePosition:position];
+        if (position != self.queue.position) {
+            [self moveToQueuePosition:position];
+        }
         [self preparePlayable:self.queue[self.queue.position]];
     }
 }

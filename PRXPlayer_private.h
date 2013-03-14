@@ -52,6 +52,7 @@ extern float LongPeriodicTimeObserver;
 - (BOOL) playable:(id<PRXPlayable>)playable isEqualToPlayable:(id<PRXPlayable>)otherPlayable;
 
 - (void) loadAndPlayPlayable:(id<PRXPlayable>)playable;
+- (void) preparePlayable:(id<PRXPlayable>)playable;
 
 - (void) currentPlayableWillChange;
 - (void) playerStatusDidChange:(NSDictionary*)change;

@@ -49,6 +49,8 @@ extern float LongPeriodicTimeObserver;
 
 @property BOOL manageSession; 
 
+- (BOOL) playable:(id<PRXPlayable>)playable isEqualToPlayable:(id<PRXPlayable>)otherPlayable;
+
 - (void) loadAndPlayPlayable:(id<PRXPlayable>)playable;
 
 - (void) currentPlayableWillChange;

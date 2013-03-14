@@ -144,13 +144,7 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (BOOL) isCurrentPlayable:(NSObject<PRXPlayable> *)playable {
-    if ([self.currentPlayable respondsToSelector:@selector(isEqualToPlayable:)]
-        && [playable respondsToSelector:@selector(isEqualToPlayable:)]) {
-        return [playable isEqualToPlayable:self.currentPlayable];
-    } else {
-        return [playable.audioURL isEqual:self.currentPlayable.audioURL];
-    }
-    
+    return [self playable:self.currentPlayable isEqualToPlayable:playable];
 }
 
 - (void) setCurrentPlayerItem:(AVPlayerItem*)currentPlayerItem {
@@ -221,6 +215,15 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (BOOL) isWaitingForPlayable:(NSObject<PRXPlayable> *)playable {
   return ([self isCurrentPlayable:playable] && waitingForPlayableToBeReadyForPlayback);
+}
+
+- (BOOL) playable:(id<PRXPlayable>)playable isEqualToPlayable:(id<PRXPlayable>)otherPlayable {
+    if ([playable respondsToSelector:@selector(isEqualToPlayable:)]
+        && [otherPlayable respondsToSelector:@selector(isEqualToPlayable:)]) {
+        return [playable isEqualToPlayable:otherPlayable];
+    } else {
+        return [playable.audioURL isEqual:otherPlayable.audioURL];
+    }
 }
 
 #pragma mark Asynchronous loading callbacks

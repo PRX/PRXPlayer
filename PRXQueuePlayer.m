@@ -175,7 +175,7 @@
     if (self.queue.count == 0) { return NO; }
     
     NSUInteger _idx = [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable>pl, NSUInteger idx, BOOL *stop) {
-        return [pl isEqualToPlayable:playable];
+        return [self playable:pl isEqualToPlayable:playable];
     }];
     
     return _idx != NSNotFound;
@@ -183,7 +183,7 @@
 
 - (int) firstQueuePositionForObject:(id<PRXPlayable>)playable {
     return [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable> pl, NSUInteger idx, BOOL *stop) {
-        return [pl isEqualToPlayable:playable];
+        return [self playable:pl isEqualToPlayable:playable];
     }]; 
 }
 
@@ -191,7 +191,7 @@
     NSUInteger _idx;
     
     _idx = [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable> pl, NSUInteger idx, BOOL *stop) {
-        return ([pl isEqualToPlayable:playable] && idx >= self.queue.cursor);
+        return ([self playable:pl isEqualToPlayable:playable] && idx >= self.queue.cursor);
     }];
     
     if (_idx == NSNotFound) {
@@ -203,7 +203,7 @@
 
 - (NSIndexSet *) allQueuePositionsForObject:(id<PRXPlayable>)playable {
     return [self.queue indexesOfObjectsPassingTest:^BOOL(id<PRXPlayable>pl, NSUInteger idx, BOOL *stop) {
-        return [pl isEqualToPlayable:playable];
+        return [self playable:pl isEqualToPlayable:playable];
     }];
 }
 

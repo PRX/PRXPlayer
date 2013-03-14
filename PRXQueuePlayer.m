@@ -260,7 +260,7 @@
 
 - (NSUInteger)firstQueuePositionForPlayable:(id<PRXPlayable>)playable {
     return [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable> aPlayable, NSUInteger idx, BOOL *stop) {
-        return [aPlayable isEqualToPlayable:playable];
+        return [self playable:aPlayable isEqualToPlayable:playable];
     }];
 }
 
@@ -268,7 +268,7 @@
     NSUInteger position;
     
     position = [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable> aPlayable, NSUInteger idx, BOOL* stop) {
-        return ([aPlayable isEqualToPlayable:playable] && idx >= self.queue.position);
+        return ([self playable:aPlayable isEqualToPlayable:playable] && idx >= self.queue.position);
     }];
     
     if (position == NSNotFound) {
@@ -280,10 +280,9 @@
 
 - (NSIndexSet*)allQueuePositionsForPlayable:(id<PRXPlayable>)playable {
     return [self.queue indexesOfObjectsPassingTest:^BOOL(id<PRXPlayable>aPlayable, NSUInteger idx, BOOL *stop) {
-        return [aPlayable isEqualToPlayable:playable];
+        return [self playable:aPlayable isEqualToPlayable:playable];
     }];
 }
-
 
 #pragma mark - Remote control
 

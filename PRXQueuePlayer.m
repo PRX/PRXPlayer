@@ -329,4 +329,11 @@
     [self reportPlayerStatusChangeToObservers];
 }
 
+#pragma mark -- Overrides
+
+- (void) playerItemDidPlayToEndTime:(NSNotification*)notification {
+    [super playerItemDidPlayToEndTime:notification];
+    [self playNext]; 
+}
+
 @end

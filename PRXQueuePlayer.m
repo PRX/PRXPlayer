@@ -92,19 +92,11 @@
 }
 
 - (NSUInteger)previousPosition {
-    if (self.hasPrevious) {
-        return (self.queue.position - 1);
-    } else {
-        return NSNotFound;
-    }
+    return self.hasPrevious ? (self.queue.position - 1) : NSNotFound;
 }
 
 - (NSUInteger)nextPosition {
-    if (self.hasNext) {
-        return (self.queue.position + 1);
-    } else {
-        return NSNotFound;
-    }
+    return self.hasNext ? (self.queue.position + 1) : NSNotFound;
 }
 
 #pragma mark - Queue movement

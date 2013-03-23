@@ -28,21 +28,21 @@
 @interface PRXQueuePlayer : PRXPlayer<PRXPlayerQueueDelegate>
 
 @property (strong, nonatomic, readonly) PRXPlayerQueue *queue;
+
 @property (nonatomic, readonly) BOOL hasNext;
 @property (nonatomic, readonly) BOOL hasPrevious;
 
+@property (nonatomic, readonly) NSUInteger previousPosition;
+@property (nonatomic, readonly) NSUInteger nextPosition;
+
 - (BOOL) canMoveToQueuePosition:(NSUInteger)position;
 - (void) moveToQueuePosition:(NSUInteger)position;
-- (void) moveToFirst;
-- (void) moveToNext;
-- (void) moveToPrevious;
-- (void) moveToLast; 
-
 - (void) playFromQueuePosition:(NSUInteger)position;
-- (void) playFirst;
-- (void) playNext;
-- (void) playPrevious;
-- (void) playLast;
+
+- (void) seekToQueuePosition:(NSUInteger)position;
+
+- (void) seekForward;
+- (void) seekBackward;
 
 - (void) enqueue:(id<PRXPlayable>)playable; 
 - (void) enqueue:(id<PRXPlayable>)playable atPosition:(NSUInteger)position;

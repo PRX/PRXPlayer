@@ -110,15 +110,26 @@
 - (void)moveToQueuePosition:(NSUInteger)position {
     if ([self canMoveToQueuePosition:position]) {
         self.queue.position = position;
-        
-        if (self.player.rate != 0.0f) {
-            [self playFromQueuePosition:position];
-        }
     }
 }
 
-- (void)moveToFirst {
-    [self moveToQueuePosition:0];
+- (void) seekToQueuePosition:(NSUInteger)position {
+    if ([self canMoveToQueuePosition:position]) {
+    	[self moveToQueuePosition:position];
+    	[self preparePlayable:self.queue[self.queue.position]];
+    }
+}
+
+- (void) seekForward {
+    if (self.hasNext) {
+        [self seekToQueuePosition:self.nextPosition];
+    }
+}
+
+- (void) seekBackward {
+    if (self.hasPrevious) {
+    	[self seekToQueuePosition:self.previousPosition];
+    }
 }
 
 - (void)moveToPrevious {
@@ -131,41 +142,6 @@
     if (self.hasNext) {
         [self moveToQueuePosition:self.nextPosition];
     }
-}
-
-- (void)moveToLast {
-    [self moveToQueuePosition:(self.queue.count - 1)];
-}
-
-#pragma mark - Queue playback
-
-- (void)playFromQueuePosition:(NSUInteger)position {
-    if ([self canMoveToQueuePosition:position]) {
-        if (position != self.queue.position) {
-            [self moveToQueuePosition:position];
-        }
-        [self preparePlayable:self.queue[self.queue.position]];
-    }
-}
-
-- (void)playFirst {
-    [self playFromQueuePosition:0];
-}
-
-- (void)playPrevious {
-    if (self.hasPrevious) {
-        [self playFromQueuePosition:self.previousPosition];
-    }
-}
-
-- (void)playNext {
-    if (self.hasNext) {
-        [self playFromQueuePosition:self.nextPosition];
-    }
-}
-
-- (void)playLast {
-    [self playFromQueuePosition:(self.queue.count - 1)];
 }
 
 #pragma mark - Queue manipulation

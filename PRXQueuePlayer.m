@@ -51,10 +51,9 @@
         [super play];
     } else {
         if (self.queue.position == NSNotFound) {
-            [self playFromQueuePosition:0];
-        } else {
-            [self playPlayable:self.queue[self.queue.position]];
+            [self moveToQueuePosition:0];
         }
+        [self playPlayable:self.queue[self.queue.position]];
     }
 }
 
@@ -73,7 +72,7 @@
             [super playerItemStatusDidChange:change];
         } else {
             [self reportPlayerStatusChangeToObservers];
-            [self playNext];
+            [self seekForward];
         }
     } else {
         [super playerItemStatusDidChange:change];
@@ -264,10 +263,10 @@
     
     switch (event.subtype) {
         case UIEventSubtypeRemoteControlNextTrack:
-            [self playNext];
+            [self seekForward];
             break;
 		case UIEventSubtypeRemoteControlPreviousTrack:
-            [self playPrevious];
+            [self seekBackward];
 			break;
 		default:
 			break;
@@ -301,7 +300,7 @@
 
 - (void) playerItemDidPlayToEndTime:(NSNotification*)notification {
     [super playerItemDidPlayToEndTime:notification];
-    [self playNext]; 
+    [self seekForward];
 }
 
 @end

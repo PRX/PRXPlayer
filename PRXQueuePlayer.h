@@ -37,8 +37,6 @@
 
 - (BOOL) canMoveToQueuePosition:(NSUInteger)position;
 - (void) moveToQueuePosition:(NSUInteger)position;
-- (void) playFromQueuePosition:(NSUInteger)position;
-
 - (void) seekToQueuePosition:(NSUInteger)position;
 
 - (void) seekForward;

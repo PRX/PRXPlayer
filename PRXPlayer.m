@@ -79,6 +79,11 @@ static PRXPlayer* sharedPlayerInstance;
                                                selector:@selector(audioSessionInterruption:)
                                                    name:AVAudioSessionInterruptionNotification
                                                    object:nil];
+          
+            [NSNotificationCenter.defaultCenter addObserver:self
+                                                   selector:@selector(audioSessionRouteChange:)
+                                                       name:AVAudioSessionRouteChangeNotification
+                                                     object:nil];
         }
         
         _reachManager = [[ReachabilityManager alloc] init];
@@ -391,7 +396,7 @@ static PRXPlayer* sharedPlayerInstance;
     _currentURLAsset = nil;
     [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
     playerSoftEndBoundaryTimeObserver = nil; 
-    _player.rate = 0.0; 
+    _player.rate = 0.0;
     _player = nil;
   
     [self reportPlayerStatusChangeToObservers];
@@ -811,6 +816,24 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (NSTimeInterval) interruptResumeTimeLimit {
     return (60 * 4);
+}
+
+#pragma mark Route changes
+
+- (void) audioSessionRouteChange:(NSNotification*)notification {
+    NSUInteger reason = [notification.userInfo[AVAudioSessionRouteChangeReasonKey] integerValue];
+    
+    PRXLog(@"Audio session route changed: %i", reason);
+    //  AVAudioSessionRouteDescription* previousRoute = notification.userInfo[AVAudioSessionRouteChangePreviousRouteKey];
+    //  AVAudioSessionRouteDescription* currentRoute = [AVAudioSession.sharedInstance currentRoute];
+    
+    switch (reason) {
+        case AVAudioSessionRouteChangeReasonOldDeviceUnavailable:
+            [self pause];
+            break;
+        default:
+            break;
+    }
 }
 
 #pragma mark - Remote control

@@ -26,6 +26,11 @@
 #import <MediaPlayer/MediaPlayer.h>
 #import "Reachability.h"
 
+void audioRouteChangeListenerCallback(void *inUserData, AudioSessionPropertyID inPropertyID, UInt32 inPropertyValueSize, const void *inPropertyValue) {
+    PRXPlayer *player = [PRXPlayer sharedPlayer];
+    [player handleAudioSessionRouteChange:inPropertyID withPropertySize:inPropertyValueSize andValue:inPropertyValue];
+}
+
 @implementation PRXPlayer
 
 static const NSString* PlayerStatusContext;
@@ -35,11 +40,6 @@ static const NSString* PlayerItemStatusContext;
 static const NSString* PlayerItemBufferEmptyContext;
 
 float LongPeriodicTimeObserver = 10.0f;
-
-void audioRouteChangeListenerCallback(void *inUserData, AudioSessionPropertyID inPropertyID, UInt32 inPropertyValueSize, const void *inPropertyValue) {
-    PRXPlayer *player = [PRXPlayer sharedPlayer];
-    [player handleAudioSessionRouteChange:inPropertyID withPropertySize:inPropertyValueSize andValue:inPropertyValue];
-}
 
 static PRXPlayer* sharedPlayerInstance;
 
@@ -294,7 +294,7 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) handleCurrentPlayable {
     if (![self.currentURLAsset.URL isEqual:self.currentPlayable.audioURL]) {
-        PRXLog(@"Switching to stream or local file because other is no longer available");
+        PRXLog(@"Switching to stream or local file because other is no longer available %@", self.currentPlayable.audioURL);
         
         waitingForPlayableToBeReadyForPlayback = YES;
         if (!holdPlayback) { playerIsBuffering = YES; }
@@ -489,6 +489,7 @@ static PRXPlayer* sharedPlayerInstance;
     if (keyValueChangeKind == NSKeyValueChangeSetting) {
         if (self.player.currentItem.status == AVPlayerStatusReadyToPlay) {
             waitingForPlayableToBeReadyForPlayback = NO;
+            playerIsBuffering = NO; 
             retryCount = 0;
             
             [self setMPNowPlayingInfoCenterNowPlayingInfo];

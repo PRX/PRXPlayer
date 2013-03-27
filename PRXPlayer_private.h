@@ -26,6 +26,8 @@
 #import "ReachabilityManager.h"
 #import <MediaPlayer/MediaPlayer.h>
 
+void audioRouteChangeListenerCallback(void *inUserData, AudioSessionPropertyID inPropertyID, UInt32 inPropertyValueSize, const void *inPropertyValue); 
+
 @interface PRXPlayer ()
 
 extern float LongPeriodicTimeObserver;

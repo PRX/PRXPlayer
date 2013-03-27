@@ -36,6 +36,11 @@ static const NSString* PlayerItemBufferEmptyContext;
 
 float LongPeriodicTimeObserver = 10.0f;
 
+void audioRouteChangeListenerCallback(void *inUserData, AudioSessionPropertyID inPropertyID, UInt32 inPropertyValueSize, const void *inPropertyValue) {
+    PRXPlayer *player = [PRXPlayer sharedPlayer];
+    [player handleAudioSessionRouteChange:inPropertyID withPropertySize:inPropertyValueSize andValue:inPropertyValue];
+}
+
 static PRXPlayer* sharedPlayerInstance;
 
 + (id)sharedPlayer {
@@ -108,6 +113,8 @@ static PRXPlayer* sharedPlayerInstance;
         
         if (SYSTEM_VERSION_LESS_THAN(@"6.0")) {
             [[AVAudioSession sharedInstance] setDelegate:self];
+        } else {
+            AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, audioRouteChangeListenerCallback, (__bridge void *) self);
         }
     }
 }
@@ -819,6 +826,28 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 #pragma mark Route changes
+
+- (void) handleAudioSessionRouteChange:(AudioSessionPropertyID)inPropertyID withPropertySize:(UInt32)inPropertyValueSize andValue:(const void *)inPropertyValue {
+    if (SYSTEM_VERSION_LESS_THAN(@"6.0")) {
+        if (inPropertyID != kAudioSessionProperty_AudioRouteChange) { return; }
+        
+        CFDictionaryRef routeChangeDictionary = inPropertyValue;
+        CFNumberRef routeChangeReasonRef = CFDictionaryGetValue(routeChangeDictionary, CFSTR(kAudioSession_AudioRouteChangeKey_Reason));
+        SInt32 routeChangeReason;
+        CFNumberGetValue (routeChangeReasonRef, kCFNumberSInt32Type, &routeChangeReason);
+        
+        PRXLog(@"Audio session route changed: %i", (int)routeChangeReason);
+        
+        if (routeChangeReason == kAudioSessionRouteChangeReason_OldDeviceUnavailable) {
+            // Headset is unplugged..
+            [self pause];
+        } else if (routeChangeReason == kAudioSessionRouteChangeReason_NewDeviceAvailable) {
+            // Headset is plugged in..
+        } else {
+            //    NSLog(@"\n\n\routeChangeReason: %d\n\n\n", routeChangeReason);
+        }
+    }
+}
 
 - (void) audioSessionRouteChange:(NSNotification*)notification {
     NSUInteger reason = [notification.userInfo[AVAudioSessionRouteChangeReasonKey] integerValue];

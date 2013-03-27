@@ -74,6 +74,7 @@ extern float LongPeriodicTimeObserver;
 - (void) audioSessionDidEndInterruption:(NSNotification*)notification;
 - (void) audioSessionInterruption:(NSNotification*)notification;
 
+- (void) handleAudioSessionRouteChange:(AudioSessionPropertyID)inPropertyID withPropertySize:(UInt32)inPropertyValueSize andValue:(const void *)inPropertyValue;
 - (void) audioSessionRouteChange:(NSNotification*)notification;
 
 - (void) observePlayer:(AVPlayer*)player;

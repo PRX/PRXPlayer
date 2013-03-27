@@ -66,7 +66,7 @@ static PRXPlayer* sharedPlayerInstance;
 - (id) init {
     self = [self initWithAudioSessionManagement:YES];
     if (self) {
-        
+        holdPlayback = YES;
     }
     return self;
 }

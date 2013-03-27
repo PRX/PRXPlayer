@@ -294,7 +294,7 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) handleCurrentPlayable {
     if (![self.currentURLAsset.URL isEqual:self.currentPlayable.audioURL]) {
-        PRXLog(@"Switching to stream or local file because other is no longer available");
+        PRXLog(@"Switching to stream or local file because other is no longer available %@", self.currentPlayable.audioURL);
         
         waitingForPlayableToBeReadyForPlayback = YES;
         if (!holdPlayback) { playerIsBuffering = YES; }
@@ -489,6 +489,7 @@ static PRXPlayer* sharedPlayerInstance;
     if (keyValueChangeKind == NSKeyValueChangeSetting) {
         if (self.player.currentItem.status == AVPlayerStatusReadyToPlay) {
             waitingForPlayableToBeReadyForPlayback = NO;
+            playerIsBuffering = NO; 
             retryCount = 0;
             
             [self setMPNowPlayingInfoCenterNowPlayingInfo];

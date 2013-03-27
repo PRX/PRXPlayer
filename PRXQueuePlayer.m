@@ -51,10 +51,9 @@
         [super play];
     } else {
         if (self.queue.position == NSNotFound) {
-            [self playFromQueuePosition:0];
-        } else {
-            [self playPlayable:self.queue[self.queue.position]];
+            [self moveToQueuePosition:0];
         }
+        [self playPlayable:self.queue[self.queue.position]];
     }
 }
 
@@ -73,7 +72,7 @@
             [super playerItemStatusDidChange:change];
         } else {
             [self reportPlayerStatusChangeToObservers];
-            [self playNext];
+            [self seekForward];
         }
     } else {
         [super playerItemStatusDidChange:change];
@@ -92,19 +91,11 @@
 }
 
 - (NSUInteger)previousPosition {
-    if (self.hasPrevious) {
-        return (self.queue.position - 1);
-    } else {
-        return NSNotFound;
-    }
+    return self.hasPrevious ? (self.queue.position - 1) : NSNotFound;
 }
 
 - (NSUInteger)nextPosition {
-    if (self.hasNext) {
-        return (self.queue.position + 1);
-    } else {
-        return NSNotFound;
-    }
+    return self.hasNext ? (self.queue.position + 1) : NSNotFound;
 }
 
 #pragma mark - Queue movement
@@ -118,15 +109,26 @@
 - (void)moveToQueuePosition:(NSUInteger)position {
     if ([self canMoveToQueuePosition:position]) {
         self.queue.position = position;
-        
-        if (self.player.rate != 0.0f) {
-            [self playFromQueuePosition:position];
-        }
     }
 }
 
-- (void)moveToFirst {
-    [self moveToQueuePosition:0];
+- (void) seekToQueuePosition:(NSUInteger)position {
+    if ([self canMoveToQueuePosition:position]) {
+    	[self moveToQueuePosition:position];
+    	[self preparePlayable:self.queue[self.queue.position]];
+    }
+}
+
+- (void) seekForward {
+    if (self.hasNext) {
+        [self seekToQueuePosition:self.nextPosition];
+    }
+}
+
+- (void) seekBackward {
+    if (self.hasPrevious) {
+    	[self seekToQueuePosition:self.previousPosition];
+    }
 }
 
 - (void)moveToPrevious {
@@ -139,41 +141,6 @@
     if (self.hasNext) {
         [self moveToQueuePosition:self.nextPosition];
     }
-}
-
-- (void)moveToLast {
-    [self moveToQueuePosition:(self.queue.count - 1)];
-}
-
-#pragma mark - Queue playback
-
-- (void)playFromQueuePosition:(NSUInteger)position {
-    if ([self canMoveToQueuePosition:position]) {
-        if (position != self.queue.position) {
-            [self moveToQueuePosition:position];
-        }
-        [self preparePlayable:self.queue[self.queue.position]];
-    }
-}
-
-- (void)playFirst {
-    [self playFromQueuePosition:0];
-}
-
-- (void)playPrevious {
-    if (self.hasPrevious) {
-        [self playFromQueuePosition:self.previousPosition];
-    }
-}
-
-- (void)playNext {
-    if (self.hasNext) {
-        [self playFromQueuePosition:self.nextPosition];
-    }
-}
-
-- (void)playLast {
-    [self playFromQueuePosition:(self.queue.count - 1)];
 }
 
 #pragma mark - Queue manipulation
@@ -296,10 +263,10 @@
     
     switch (event.subtype) {
         case UIEventSubtypeRemoteControlNextTrack:
-            [self playNext];
+            [self seekForward];
             break;
 		case UIEventSubtypeRemoteControlPreviousTrack:
-            [self playPrevious];
+            [self seekBackward];
 			break;
 		default:
 			break;
@@ -333,7 +300,7 @@
 
 - (void) playerItemDidPlayToEndTime:(NSNotification*)notification {
     [super playerItemDidPlayToEndTime:notification];
-    [self playNext]; 
+    [self seekForward];
 }
 
 @end

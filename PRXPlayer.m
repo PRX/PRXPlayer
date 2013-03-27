@@ -26,6 +26,11 @@
 #import <MediaPlayer/MediaPlayer.h>
 #import "Reachability.h"
 
+void audioRouteChangeListenerCallback(void *inUserData, AudioSessionPropertyID inPropertyID, UInt32 inPropertyValueSize, const void *inPropertyValue) {
+    PRXPlayer *player = [PRXPlayer sharedPlayer];
+    [player handleAudioSessionRouteChange:inPropertyID withPropertySize:inPropertyValueSize andValue:inPropertyValue];
+}
+
 @implementation PRXPlayer
 
 static const NSString* PlayerStatusContext;
@@ -35,11 +40,6 @@ static const NSString* PlayerItemStatusContext;
 static const NSString* PlayerItemBufferEmptyContext;
 
 float LongPeriodicTimeObserver = 10.0f;
-
-void audioRouteChangeListenerCallback(void *inUserData, AudioSessionPropertyID inPropertyID, UInt32 inPropertyValueSize, const void *inPropertyValue) {
-    PRXPlayer *player = [PRXPlayer sharedPlayer];
-    [player handleAudioSessionRouteChange:inPropertyID withPropertySize:inPropertyValueSize andValue:inPropertyValue];
-}
 
 static PRXPlayer* sharedPlayerInstance;
 

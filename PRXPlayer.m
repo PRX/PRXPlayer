@@ -748,7 +748,7 @@ static PRXPlayer* sharedPlayerInstance;
 #pragma mark Reachability Interruption
 
 - (void) reachabilityDidChangeFrom:(NetworkStatus)oldReachability to:(NetworkStatus)newReachability {
-    NSLog(@"reachability did change from %d to %d", oldReachability, newReachability);
+    PRXLog(@"Reachability did change from %d to %d", oldReachability, newReachability);
     if (newReachability == NotReachable) {
         [self keepAliveInBackground];
     } else if (newReachability == ReachableViaWiFi) {

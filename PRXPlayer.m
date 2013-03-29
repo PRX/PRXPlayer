@@ -273,8 +273,6 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) preparePlayable:(NSObject<PRXPlayable> *)playable {
-//    rateAtAudioPlaybackInterruption = NSNotFound;
-    NSLog(@"preparePlayable");
     dateAtAudioPlaybackInterruption = nil;
     
     if (![self isCurrentPlayable:playable]) {
@@ -352,7 +350,7 @@ static PRXPlayer* sharedPlayerInstance;
     self.reachManager.reach.reachableOnWWAN = self.allowsPlaybackViaWWAN;
     
     if (self.reachManager.reach.isReachable || [playable.audioURL isFileURL]) {
-        PRXLog(@"loading episode into player, playback will start async");
+        PRXLog(@"Loading episode into player, playback will start async");
         self.currentPlayable = playable;
     } else {
         PRXLog(@"Aborting loading, network not reachable");
@@ -480,13 +478,15 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) playerItemStatusDidChange:(NSDictionary*)change {
-    PRXLog(@"Player item status did change to %@", change);
-  
     [self reportPlayerStatusChangeToObservers];
     
     NSUInteger keyValueChangeKind = [change[NSKeyValueChangeKindKey] integerValue];
   
     if (keyValueChangeKind == NSKeyValueChangeSetting) {
+        id _new = change[NSKeyValueChangeNewKey];
+        id _old = change[NSKeyValueChangeOldKey];
+        PRXLog(@"AVPlayerItem status changed from %@ to %@", _old, _new);
+
         if (self.player.currentItem.status == AVPlayerStatusReadyToPlay) {
             waitingForPlayableToBeReadyForPlayback = NO;
             playerIsBuffering = NO; 

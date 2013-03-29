@@ -29,7 +29,7 @@
 #define PRXDEBUG 1
 
 #if PRXDEBUG
-#define PRXLog(...) NSLog(__VA_ARGS__)
+#define PRXLog(format, ...) NSLog((@"[PRX][Audio]" format), ##__VA_ARGS__)
 #else
 #define PRXLog(...)
 #endif 

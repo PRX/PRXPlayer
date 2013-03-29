@@ -113,7 +113,6 @@ static PRXPlayer* sharedPlayerInstance;
         
         if (SYSTEM_VERSION_LESS_THAN(@"6.0")) {
             [[AVAudioSession sharedInstance] setDelegate:self];
-        } else {
             AudioSessionAddPropertyListener(kAudioSessionProperty_AudioRouteChange, audioRouteChangeListenerCallback, (__bridge void *) self);
         }
     }

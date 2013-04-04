@@ -58,7 +58,6 @@
 }
 
 - (void) playerItemStatusDidChange:(NSDictionary*)change {
-    PRXLog(@"QueuePlayer item status did change to %@", change);
     NSUInteger keyValueChangeKind = [change[NSKeyValueChangeKindKey] integerValue];
     
     if (keyValueChangeKind == NSKeyValueChangeSetting && self.player.currentItem.status == AVPlayerStatusFailed) {

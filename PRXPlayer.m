@@ -992,8 +992,8 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void)endInterruption {
     PRXLog(@"AVAudioSession Delegate endInterruption");
-    [[AVAudioSession sharedInstance] setActive:YES];
-    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+//    [[AVAudioSession sharedInstance] setActive:YES];
+//    [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
     [self audioSessionDidEndInterruption:nil];
 }
 

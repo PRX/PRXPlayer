@@ -357,7 +357,9 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) reloadAndPlayPlayable:(NSObject<PRXPlayable> *)playable {
+    Boolean hold = holdPlayback;
     [self stop];
+    holdPlayback = hold;
     [self preparePlayable:playable];
 }
 
@@ -786,7 +788,6 @@ static PRXPlayer* sharedPlayerInstance;
     PRXLog(@"Audio session has been interrupted %f...", self.player.rate);
     [self keepAliveInBackground];
     dateAtAudioPlaybackInterruption = NSDate.date;
-    [self keepAliveInBackground];
 }
 
 - (void) audioSessionDidEndInterruption:(NSNotification*)notification {

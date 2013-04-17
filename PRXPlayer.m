@@ -766,7 +766,7 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) stopPlayerAndRetry {
-    if (![self.currentPlayable.audioURL isFileURL]) {
+    if (self.currentPlayable && ![self.currentPlayable.audioURL isFileURL]) {
         [self reloadAndPlayPlayable:self.currentPlayable];
     }
 }

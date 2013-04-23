@@ -42,7 +42,9 @@
         [super loadAndPlayPlayable:playable];
     } else {
         [self enqueueAfterCurrentPosition:playable];
-        [self loadAndPlayPlayable:playable];
+        if ([self queueContainsPlayable:playable]) {
+            [self loadAndPlayPlayable:playable];
+        }
     }
 }
 

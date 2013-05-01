@@ -361,7 +361,7 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) reloadAndPlayPlayable:(NSObject<PRXPlayable> *)playable {
     PRXLog(@"reloadAndPlayPlayable %@", [NSDate date]); 
-    Boolean hold = holdPlayback;
+    BOOL hold = holdPlayback;
     [self stop];
     holdPlayback = hold;
     [self preparePlayable:playable];

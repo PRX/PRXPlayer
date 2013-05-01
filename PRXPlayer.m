@@ -1,3 +1,4 @@
+
 //
 //  PRXPlayer.m
 //  PRXPlayer
@@ -136,21 +137,21 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) setCurrentPlayable:(NSObject<PRXPlayable> *)playable {
     if (![self isCurrentPlayable:playable]) {
-        [self currentPlayableWillChange];
-        
-        _currentPlayable = playable;
-      
-      // This should not be necessary if self.player is being managed properly. Should only need to
-      // set up observers on the AVPlayer when it's created. EXCEPT for the boundary timer; that needs
-      // the change whenever the playable changes.
-//        [self observePlayer:self.player];
-      
-        waitingForPlayableToBeReadyForPlayback = YES;
-        if (!holdPlayback) { playerIsBuffering = YES; }
-      
-        [self reportPlayerStatusChangeToObservers];
-      
-        self.currentURLAsset = [AVURLAsset assetWithURL:self.currentPlayable.audioURL];
+            [self currentPlayableWillChange];
+            
+            _currentPlayable = playable;
+          
+          // This should not be necessary if self.player is being managed properly. Should only need to
+          // set up observers on the AVPlayer when it's created. EXCEPT for the boundary timer; that needs
+          // the change whenever the playable changes.
+    //        [self observePlayer:self.player];
+          
+            waitingForPlayableToBeReadyForPlayback = YES;
+            if (!holdPlayback) { playerIsBuffering = YES; }
+          
+            [self reportPlayerStatusChangeToObservers];
+            
+            self.currentURLAsset = [AVURLAsset assetWithURL:self.currentPlayable.audioURL];
     }
 }
 
@@ -164,18 +165,20 @@ static PRXPlayer* sharedPlayerInstance;
     _currentPlayerItem = currentPlayerItem;
     
     if (!self.player) {
-        self.player = [AVPlayer playerWithPlayerItem:self.currentPlayerItem];
-        
-        float version = UIDevice.currentDevice.systemVersion.floatValue;
-        
-        if (version >= 6.0f) {
-            self.player.allowsExternalPlayback = NO;
-        } else {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            self.player = [AVPlayer playerWithPlayerItem:self.currentPlayerItem];
+            
+            float version = UIDevice.currentDevice.systemVersion.floatValue;
+            
+            if (version >= 6.0f) {
+                self.player.allowsExternalPlayback = NO;
+            } else {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-            self.player.allowsAirPlayVideo = NO;
+                self.player.allowsAirPlayVideo = NO;
 #pragma clang diagnostic pop
-        }
+            }
+        });
     } else {
         [self.player replaceCurrentItemWithPlayerItem:self.currentPlayerItem];
     }
@@ -357,6 +360,7 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) reloadAndPlayPlayable:(NSObject<PRXPlayable> *)playable {
+    PRXLog(@"reloadAndPlayPlayable %@", [NSDate date]); 
     Boolean hold = holdPlayback;
     [self stop];
     holdPlayback = hold;
@@ -749,7 +753,7 @@ static PRXPlayer* sharedPlayerInstance;
 #pragma mark Reachability Interruption
 
 - (void) reachabilityDidChangeFrom:(NetworkStatus)oldReachability to:(NetworkStatus)newReachability {
-    PRXLog(@"Reachability did change from %d to %d", oldReachability, newReachability);
+    PRXLog(@"Reachability did change from %d to %d %@", oldReachability, newReachability, [NSDate date]);
     if (newReachability == NotReachable) {
         [self keepAliveInBackground];
     } else if (newReachability == ReachableViaWiFi) {
@@ -766,6 +770,7 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) stopPlayerAndRetry {
+    PRXLog(@"stopPlayerAndRetry %@", [NSDate date]); 
     if (self.currentPlayable && ![self.currentPlayable.audioURL isFileURL]) {
         [self reloadAndPlayPlayable:self.currentPlayable];
     }
@@ -816,7 +821,7 @@ static PRXPlayer* sharedPlayerInstance;
     // the intr. ends, so we do need to coerce it in some cases.
     // REAL DUMB.
 
-    if (dateAtAudioPlaybackInterruption) {
+    if (dateAtAudioPlaybackInterruption && self.currentPlayable) {
         [self loadAndPlayPlayable:self.currentPlayable];
     }
     

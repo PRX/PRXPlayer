@@ -71,6 +71,7 @@
     
     BOOL holdPlayback;
     BOOL waitingForPlayableToBeReadyForPlayback;
+    BOOL audioSessionIsInterrupted; 
     BOOL playerIsBuffering;
     BOOL networkBecameUnreachable;
   

@@ -305,7 +305,8 @@ static PRXPlayer* sharedPlayerInstance;
         
         waitingForPlayableToBeReadyForPlayback = NO;
         return;
-    } else if ([self rateForPlayable:self.currentPlayable] == 0.0f && !waitingForPlayableToBeReadyForPlayback) {
+    } else if ([self rateForPlayable:self.currentPlayable] == 0.0f && !waitingForPlayableToBeReadyForPlayback
+                && !audioSessionIsInterrupted) {
         PRXLog(@"Resume (or start) playing current playable");
         
         if (dateAtAudioPlaybackInterruption) {
@@ -557,7 +558,7 @@ static PRXPlayer* sharedPlayerInstance;
             dateAtAudioPlaybackInterruption = [NSDate date];
         } else {
             PRXLog(@"...and was a remote file, but we still have connectivity...");
-            [self reloadAndPlayPlayable:self.currentPlayable];                
+            [self reloadAndPlayPlayable:self.currentPlayable];
         }
     }
   
@@ -791,12 +792,14 @@ static PRXPlayer* sharedPlayerInstance;
 
 - (void) audioSessionDidBeginInterruption:(NSNotification*)notification {
     PRXLog(@"Audio session has been interrupted %f...", self.player.rate);
+    audioSessionIsInterrupted = YES; 
     [self keepAliveInBackground];
     dateAtAudioPlaybackInterruption = NSDate.date;
 }
 
 - (void) audioSessionDidEndInterruption:(NSNotification*)notification {
     PRXLog(@"Audio session has interruption ended...");
+    audioSessionIsInterrupted = NO; 
     
     // Because of various bugs and unpredictable behavior, it is unreliable to
     // try and recover from audio session interrupts.

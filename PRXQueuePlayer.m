@@ -41,7 +41,10 @@
         self.queue.position = [self nextQueuePositionForPlayable:playable];
         [super loadAndPlayPlayable:playable];
     } else {
-        [self enqueueAfterCurrentPosition:playable];
+        if (playable) {
+            [self enqueueAfterCurrentPosition:playable];
+        }
+      
         if ([self queueContainsPlayable:playable]) {
             [self loadAndPlayPlayable:playable];
         }

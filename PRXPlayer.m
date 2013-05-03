@@ -399,7 +399,7 @@ static PRXPlayer* sharedPlayerInstance;
   
     playerIsBuffering = NO;
     waitingForPlayableToBeReadyForPlayback = NO;
-    holdPlayback = NO;
+    holdPlayback = YES;
   
     _currentPlayable = nil;
   

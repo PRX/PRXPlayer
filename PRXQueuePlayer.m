@@ -151,15 +151,23 @@
 
 - (void)enqueue:(id<PRXPlayable>)playable atPosition:(NSUInteger)position {
     [self.queue insertObject:playable atIndex:position];
+    
+    if (!self.currentPlayable) {
+        if (self.queue.position == NSNotFound) {
+            self.queue.position = 0;
+        }
+
+        [self loadPlayable:self.queue[self.queue.position]];
+    }
 }
 
 - (void)enqueue:(id<PRXPlayable>)playable {
-    [self.queue addObject:playable];
+    [self enqueue:playable atPosition:self.queue.count];
 }
 
 - (void)enqueueAfterCurrentPosition:(id<PRXPlayable>)playable {
     int position = (self.queue.count == 0 ? 0 : (self.queue.position + 1));
-    [self.queue insertObject:playable atIndex:position];
+    [self enqueue:playable atPosition:position];
 }
 
 - (void)dequeueFromPosition:(NSUInteger)position {
@@ -296,7 +304,7 @@
 
 #pragma mark - PRXAudioQueue delegate
 
-- (void) queueDidChange:(PRXPlayerQueue *)queue {
+- (void) queueDidChange:(PRXPlayerQueue*)queue {    
     [self reportPlayerStatusChangeToObservers];
 }
 

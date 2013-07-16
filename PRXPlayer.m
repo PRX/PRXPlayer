@@ -32,6 +32,10 @@ void audioRouteChangeListenerCallback(void *inUserData, AudioSessionPropertyID i
     [player handleAudioSessionRouteChange:inPropertyID withPropertySize:inPropertyValueSize andValue:inPropertyValue];
 }
 
+NSString * const PRXPlayerStatusChangeNotification = @"PRXPlayerStatusChangeNotification";
+NSString * const PRXPlayerTimeIntervalNotification = @"PRXPlayerTimeIntervalNotification";
+NSString * const PRXPlayerLongTimeIntervalNotification = @"PRXPlayerLongTimeIntervalNotification";
+
 @implementation PRXPlayer
 
 static const NSString* PlayerStatusContext;
@@ -44,7 +48,7 @@ float LongPeriodicTimeObserver = 10.0f;
 
 static PRXPlayer* sharedPlayerInstance;
 
-+ (id)sharedPlayer {
++ (instancetype)sharedPlayer {
     @synchronized(self) {
         if (sharedPlayerInstance == nil) {
             sharedPlayerInstance = [[self alloc] init];
@@ -701,6 +705,11 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) reportPlayerStatusChangeToObservers {
+  [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerStatusChangeNotification
+                                                    object:self.currentPlayable
+                                                  userInfo:nil];
+
+  
     for (NSDictionary* dict in _observers) {
         id<PRXPlayerObserver> observer = dict[@"obj"];
         if ([observer respondsToSelector:@selector(observedPlayerStatusDidChange:)]) {
@@ -710,6 +719,10 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) reportPlayerTimeIntervalToObservers {
+  [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerTimeIntervalNotification
+                                                    object:self.currentPlayable
+                                                  userInfo:nil];
+
     for (NSDictionary* dict in _observers) {
         id<PRXPlayerObserver> observer = dict[@"obj"];
         if ([observer respondsToSelector:@selector(observedPlayerDidObservePeriodicTimeInterval:)]) {
@@ -719,6 +732,10 @@ static PRXPlayer* sharedPlayerInstance;
 }
 
 - (void) reportPlayerLongTimeIntervalToObservers {
+  [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerLongTimeIntervalNotification
+                                                    object:self.currentPlayable
+                                                  userInfo:nil];
+
     for (NSDictionary* dict in _observers) {
         id<PRXPlayerObserver> observer = dict[@"obj"];
         if ([observer respondsToSelector:@selector(observedPlayerDidObserveLongPeriodicTimeInterval:)]) {

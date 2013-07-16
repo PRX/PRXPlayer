@@ -60,6 +60,10 @@
 
 @protocol PRXPlayerObserver;
 
+extern NSString * const PRXPlayerStatusChangeNotification;
+extern NSString * const PRXPlayerTimeIntervalNotification;
+extern NSString * const PRXPlayerLongTimeIntervalNotification;
+
 @interface PRXPlayer : UIResponder <AVAudioSessionDelegate,ReachabilityManagerDelegate> {
     // used for determining when the player crosses a meaningful boundary
     id playerSoftEndBoundaryTimeObserver;
@@ -80,7 +84,7 @@
     NSUInteger retryCount;
 }
 
-+ (id) sharedPlayer;
++ (instancetype) sharedPlayer;
 - (id) initWithAudioSessionManagement:(BOOL)manageSession;
 
 @property (nonatomic, strong) NSObject<PRXPlayable> *currentPlayable; 

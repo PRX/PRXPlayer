@@ -967,6 +967,10 @@ static PRXPlayer* sharedPlayerInstance;
         }
     }
     
+    if (!info[MPNowPlayingInfoPropertyPlaybackRate]) {
+        info[MPNowPlayingInfoPropertyPlaybackRate] = @(self.rateForPlayback);
+    }
+    
     return info; 
 }
 

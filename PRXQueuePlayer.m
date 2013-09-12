@@ -166,7 +166,7 @@
 }
 
 - (void)enqueueAfterCurrentPosition:(id<PRXPlayable>)playable {
-    int position = (self.queue.count == 0 ? 0 : (self.queue.position + 1));
+    NSUInteger position = (self.queue.count == 0 ? 0 : (self.queue.position + 1));
     [self enqueue:playable atPosition:position];
 }
 
@@ -175,7 +175,7 @@
 }
 
 - (void)dequeue:(id<PRXPlayable>)playable {
-    int position = [self firstQueuePositionForPlayable:playable];
+    NSUInteger position = [self firstQueuePositionForPlayable:playable];
     if (position != NSNotFound) {
         [self dequeueFromPosition:position];
     }
@@ -200,7 +200,7 @@
 }
 
 - (void)requeue:(id<PRXPlayable>)playable atPosition:(NSUInteger)position {
-    int index = [self firstQueuePositionForPlayable:playable];
+    NSUInteger index = [self firstQueuePositionForPlayable:playable];
     if (index != NSNotFound) {
         [self movePlayableFromPosition:index toPosition:position];
     }

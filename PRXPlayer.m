@@ -530,7 +530,7 @@ static PRXPlayer* sharedPlayerInstance;
             if (retryCount < self.retryLimit) {
                 retryCount++;
               
-                PRXLog(@"Retrying (retry number %i of %i)", retryCount, self.retryLimit);
+                PRXLog(@"Retrying (retry number %lu of %lu)", (unsigned long)retryCount, (unsigned long)self.retryLimit);
               
                 NSObject<PRXPlayable> *playableToRetry = self.currentPlayable;
                 [self stop];
@@ -878,7 +878,7 @@ static PRXPlayer* sharedPlayerInstance;
 - (void) audioSessionRouteChange:(NSNotification*)notification {
     NSUInteger reason = [notification.userInfo[AVAudioSessionRouteChangeReasonKey] integerValue];
     
-    PRXLog(@"Audio session route changed: %i", reason);
+    PRXLog(@"Audio session route changed: %lu", (unsigned long)reason);
     //  AVAudioSessionRouteDescription* previousRoute = notification.userInfo[AVAudioSessionRouteChangePreviousRouteKey];
     //  AVAudioSessionRouteDescription* currentRoute = [AVAudioSession.sharedInstance currentRoute];
     

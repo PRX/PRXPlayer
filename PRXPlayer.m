@@ -925,7 +925,11 @@ static PRXPlayer* sharedPlayerInstance;
         NSNumber* elapsedPlaybackTime = @(_elapsedPlaybackTime);
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = elapsedPlaybackTime;
     }
-    
+  
+    if (!info[MPNowPlayingInfoPropertyPlaybackRate]) {
+        info[MPNowPlayingInfoPropertyPlaybackRate] = @(self.rateForPlayback);
+    }
+  
     if (!info[MPMediaItemPropertyArtwork]) {
         NSArray* artworkMetadata = [AVMetadataItem metadataItemsFromArray:metadata
                                                                   withKey:AVMetadataCommonKeyArtwork

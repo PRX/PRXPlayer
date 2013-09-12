@@ -513,6 +513,11 @@ static PRXPlayer* sharedPlayerInstance;
                 NSValue* _boundry = [NSValue valueWithCMTime:boundry];
                 
                 __weak id this = self;
+              
+                if (playerSoftEndBoundaryTimeObserver) {
+                    [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+                    playerSoftEndBoundaryTimeObserver = nil;
+                }
                 
                 playerSoftEndBoundaryTimeObserver = [self.player addBoundaryTimeObserverForTimes:@[ _boundry ] queue:dispatch_queue_create("playerQueue", NULL) usingBlock:^{
                   [this playerSoftEndBoundaryTimeObserverAction];

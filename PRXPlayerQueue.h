@@ -107,6 +107,6 @@
  
  @discussion The delegate typically implements this method to respond to changes resulting from user actions, or from triggered internally within the queue or the queue player.
  */
-- (void) queueDidChange:(PRXPlayerQueue *)queue;
+- (void)queueDidChange:(PRXPlayerQueue *)queue;
 
 @end

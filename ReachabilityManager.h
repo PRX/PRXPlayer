@@ -20,6 +20,6 @@
 
 @protocol ReachabilityManagerDelegate <NSObject>
 
-- (void) reachabilityDidChangeFrom:(NetworkStatus)oldReachability to:(NetworkStatus)newReachability;
+- (void)reachabilityDidChangeFrom:(NetworkStatus)oldReachability to:(NetworkStatus)newReachability;
 
 @end

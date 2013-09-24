@@ -32,7 +32,7 @@
 #define PRXLog(format, ...) NSLog((@"[PRX][Audio] " format), ##__VA_ARGS__)
 #else
 #define PRXLog(...)
-#endif 
+#endif
 
 #define SYSTEM_VERSION_EQUAL_TO(v)                  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedSame)
 #define SYSTEM_VERSION_GREATER_THAN(v)              ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedDescending)
@@ -48,13 +48,13 @@
 
 @optional
 
-@property (nonatomic, strong, readonly) NSDictionary *userInfo; 
+@property (nonatomic, strong, readonly) NSDictionary *userInfo;
 
-- (BOOL) isEqualToPlayable:(id<PRXPlayable>)playable;
+- (BOOL)isEqualToPlayable:(id<PRXPlayable>)playable;
 
 @property (nonatomic) NSTimeInterval duration;
 @property (nonatomic) NSTimeInterval playbackCursorPosition;
-@property (nonatomic, readonly) BOOL isStream; 
+@property (nonatomic, readonly) BOOL isStream;
 
 @end
 
@@ -65,50 +65,50 @@ extern NSString * const PRXPlayerTimeIntervalNotification;
 extern NSString * const PRXPlayerLongTimeIntervalNotification;
 
 @interface PRXPlayer : UIResponder <AVAudioSessionDelegate,ReachabilityManagerDelegate> {
-    // used for determining when the player crosses a meaningful boundary
-    id playerSoftEndBoundaryTimeObserver;
-    id playerPeriodicTimeObserver;
-    id playerLongPeriodicTimeObserver; 
-    NSDate *lastLongPeriodicTimeObserverAction;
-    
-    NSUInteger backgroundKeepAliveTaskID;
-    
-    BOOL holdPlayback;
-    BOOL waitingForPlayableToBeReadyForPlayback;
-    BOOL audioSessionIsInterrupted; 
-    BOOL playerIsBuffering;
-    BOOL networkBecameUnreachable;
+  // used for determining when the player crosses a meaningful boundary
+  id playerSoftEndBoundaryTimeObserver;
+  id playerPeriodicTimeObserver;
+  id playerLongPeriodicTimeObserver;
+  NSDate *lastLongPeriodicTimeObserverAction;
   
-    NSDate* dateAtAudioPlaybackInterruption;
-    
-    NSUInteger retryCount;
+  NSUInteger backgroundKeepAliveTaskID;
+  
+  BOOL holdPlayback;
+  BOOL waitingForPlayableToBeReadyForPlayback;
+  BOOL audioSessionIsInterrupted;
+  BOOL playerIsBuffering;
+  BOOL networkBecameUnreachable;
+  
+  NSDate *dateAtAudioPlaybackInterruption;
+  
+  NSUInteger retryCount;
 }
 
-+ (instancetype) sharedPlayer;
-- (id) initWithAudioSessionManagement:(BOOL)manageSession;
++ (instancetype)sharedPlayer;
+- (id)initWithAudioSessionManagement:(BOOL)manageSession;
 
-@property (nonatomic, strong) NSObject<PRXPlayable> *currentPlayable; 
+@property (nonatomic, strong) NSObject<PRXPlayable> *currentPlayable;
 @property (nonatomic, strong) AVPlayer *player;
 @property (nonatomic, strong, readonly) AVPlayerItem *playerItem;
 @property (nonatomic, readonly) BOOL isPrebuffering;
 @property (nonatomic, readonly) float buffer;
 @property (nonatomic, strong, readonly) NSArray *observers;
 
-- (void) playPlayable:(id<PRXPlayable>)playable;
-- (void) loadPlayable:(id<PRXPlayable>)playable;
-- (void) togglePlayable:(id<PRXPlayable>)playable;
+- (void)playPlayable:(id<PRXPlayable>)playable;
+- (void)loadPlayable:(id<PRXPlayable>)playable;
+- (void)togglePlayable:(id<PRXPlayable>)playable;
 
-- (float) rateForPlayable:(id<PRXPlayable>)playable;
-- (BOOL) isCurrentPlayable:(NSObject<PRXPlayable> *)playable;
-- (BOOL) isWaitingForPlayable:(NSObject<PRXPlayable> *)playable;
+- (float)rateForPlayable:(id<PRXPlayable>)playable;
+- (BOOL)isCurrentPlayable:(NSObject<PRXPlayable> *)playable;
+- (BOOL)isWaitingForPlayable:(NSObject<PRXPlayable> *)playable;
 
-- (void) play;
-- (void) pause;
-- (void) togglePlayPause;
-- (void) stop;
+- (void)play;
+- (void)pause;
+- (void)togglePlayPause;
+- (void)stop;
 
-- (id) addObserver:(id<PRXPlayerObserver>)observer persistent:(BOOL)persistent;
-- (void) removeObserver:(id<PRXPlayerObserver>)observer;
+- (id)addObserver:(id<PRXPlayerObserver>)observer persistent:(BOOL)persistent;
+- (void)removeObserver:(id<PRXPlayerObserver>)observer;
 
 @end
 
@@ -116,8 +116,8 @@ extern NSString * const PRXPlayerLongTimeIntervalNotification;
 
 @optional
 
-- (void) observedPlayerStatusDidChange:(AVPlayer *)player;
-- (void) observedPlayerDidObservePeriodicTimeInterval:(AVPlayer *)player;
-- (void) observedPlayerDidObserveLongPeriodicTimeInterval:(AVPlayer *)player;
+- (void)observedPlayerStatusDidChange:(AVPlayer *)player;
+- (void)observedPlayerDidObservePeriodicTimeInterval:(AVPlayer *)player;
+- (void)observedPlayerDidObserveLongPeriodicTimeInterval:(AVPlayer *)player;
 
 @end

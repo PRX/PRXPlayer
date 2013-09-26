@@ -798,9 +798,19 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   NSValue *time_v = [NSValue valueWithCMTime:time];
   NSDictionary *userInfo = @{ @"time": time_v };
   
+  AVURLAsset *asset;
+  
   [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerTimeIntervalNotification
                                                     object:self
                                                   userInfo:userInfo];
+  
+  if ([self.player.currentItem.asset isKindOfClass:AVURLAsset.class]) {
+    asset = (AVURLAsset *)self.player.currentItem.asset;
+    
+    [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerTimeIntervalNotification
+                                                      object:asset.URL.absoluteString
+                                                    userInfo:userInfo];
+  }
   
   if ([self.playerItem respondsToSelector:@selector(setPlayerTime:)]) {
     self.playerItem.playerTime = time;
@@ -810,6 +820,12 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
     [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerLongTimeIntervalNotification
                                                       object:self
                                                     userInfo:userInfo];
+    
+    if (asset) {
+      [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerLongTimeIntervalNotification
+                                                        object:asset.URL.absoluteString
+                                                      userInfo:userInfo];
+    }
   }
 }
 

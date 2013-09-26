@@ -25,7 +25,7 @@
 #import "PRXPlayer.h"
 #import "PRXPlayerQueue.h"
 
-@interface PRXQueuePlayer : PRXPlayer<PRXPlayerQueueDelegate>
+@interface PRXQueuePlayer : PRXPlayer <PRXPlayerQueueDelegate>
 
 @property (strong, nonatomic, readonly) PRXPlayerQueue *queue;
 
@@ -42,25 +42,25 @@
 - (void)seekForward;
 - (void)seekBackward;
 
-- (void)enqueue:(id<PRXPlayable>)playable;
-- (void)enqueue:(id<PRXPlayable>)playable atPosition:(NSUInteger)position;
-- (void)enqueueAfterCurrentPosition:(id<PRXPlayable>)playable;
+- (void)enqueue:(id<PRXPlayerItem>)playerItem;
+- (void)enqueue:(id<PRXPlayerItem>)playerItem atPosition:(NSUInteger)position;
+- (void)enqueueAfterCurrentPosition:(id<PRXPlayerItem>)playerItem;
 
-- (void)dequeue:(id<PRXPlayable>)playable;
+- (void)dequeue:(id<PRXPlayerItem>)playerItem;
 - (void)dequeueFromPosition:(NSUInteger)position;
-- (void)requeue:(id<PRXPlayable>)playable atPosition:(NSUInteger)position;
-- (void)movePlayableFromPosition:(NSUInteger)inPosition toPosition:(NSUInteger)outPosition;
+- (void)requeue:(id<PRXPlayerItem>)playerItem atPosition:(NSUInteger)position;
+- (void)movePlayerItemFromPosition:(NSUInteger)inPosition toPosition:(NSUInteger)outPosition;
 
-- (void)enqueuePlayables:(NSArray *)playables;
-- (void)enqueuePlayables:(NSArray *)playables atPosition:(NSUInteger)position;
+- (void)enqueuePlayerItems:(NSArray *)playerItems;
+- (void)enqueuePlayerItems:(NSArray *)playerItems atPosition:(NSUInteger)position;
 
 - (void)emptyQueue;
 
-- (BOOL)queueContainsPlayable:(id<PRXPlayable>)playable;
-- (NSUInteger)firstQueuePositionForPlayable:(id<PRXPlayable>)playable;
-- (NSUInteger)nextQueuePositionForPlayable:(id<PRXPlayable>)playable;
-- (NSIndexSet *)allQueuePositionsForPlayable:(id<PRXPlayable>)playable;
-- (id<PRXPlayable>)playableAtCurrentQueuePosition;
-- (id<PRXPlayable>)playableAtQueuePosition:(NSUInteger)position;
+- (BOOL)queueContainsPlayerItem:(id<PRXPlayerItem>)playerItem;
+- (NSUInteger)firstQueuePositionForPlayerItem:(id<PRXPlayerItem>)playerItem;
+- (NSUInteger)nextQueuePositionForPlayerItem:(id<PRXPlayerItem>)playerItem;
+- (NSIndexSet *)allQueuePositionsForPlayerItem:(id<PRXPlayerItem>)playerItem;
+- (id<PRXPlayerItem>)playerItemAtCurrentQueuePosition;
+- (id<PRXPlayerItem>)playerItemAtQueuePosition:(NSUInteger)position;
 
 @end

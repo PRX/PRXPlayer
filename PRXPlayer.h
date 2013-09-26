@@ -22,102 +22,98 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#import <Foundation/Foundation.h>
-#import <AVFoundation/AVFoundation.h>
-#import "ReachabilityManager.h"
+@import UIKit;
+@import AVFoundation;
 
-#define PRXDEBUG 1
+#import "Reachability.h"
 
-#if PRXDEBUG
-#define PRXLog(format, ...) NSLog((@"[PRX][Audio] " format), ##__VA_ARGS__)
-#else
-#define PRXLog(...)
-#endif
+@protocol PRXPlayerItem, PRXPlayerDelegate;
 
-#define SYSTEM_VERSION_EQUAL_TO(v)                  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedSame)
-#define SYSTEM_VERSION_GREATER_THAN(v)              ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedDescending)
-#define SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
-#define SYSTEM_VERSION_LESS_THAN(v)                 ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedAscending)
-#define SYSTEM_VERSION_LESS_THAN_OR_EQUAL_TO(v)     ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedDescending)
-
-
-@protocol PRXPlayable <NSObject>
-
-@property (nonatomic, strong, readonly) NSURL *audioURL;
-@property (nonatomic, strong, readonly) NSDictionary *mediaItemProperties;
-
-@optional
-
-@property (nonatomic, strong, readonly) NSDictionary *userInfo;
-
-- (BOOL)isEqualToPlayable:(id<PRXPlayable>)playable;
-
-@property (nonatomic) NSTimeInterval duration;
-@property (nonatomic) NSTimeInterval playbackCursorPosition;
-@property (nonatomic, readonly) BOOL isStream;
-
-@end
-
-@protocol PRXPlayerObserver;
-
-extern NSString * const PRXPlayerStatusChangeNotification;
+extern NSString * const PRXPlayerChangeNotification;
 extern NSString * const PRXPlayerTimeIntervalNotification;
 extern NSString * const PRXPlayerLongTimeIntervalNotification;
 
-@interface PRXPlayer : UIResponder <AVAudioSessionDelegate,ReachabilityManagerDelegate> {
-  // used for determining when the player crosses a meaningful boundary
-  id playerSoftEndBoundaryTimeObserver;
-  id playerPeriodicTimeObserver;
-  id playerLongPeriodicTimeObserver;
-  NSDate *lastLongPeriodicTimeObserverAction;
-  
-  NSUInteger backgroundKeepAliveTaskID;
-  
+extern NSString * const PRXPlayerReachabilityPolicyPreventedPlayback;
+
+typedef NS_ENUM(NSUInteger, PRXPlayerState) {
+  PRXPlayerStateUnknown,
+  PRXPlayerStateEmpty,
+  PRXPlayerStateLoading,
+  PRXPlayerStateBuffering,
+  PRXPlayerStateWaiting,
+  PRXPlayerStateReady
+};
+
+@interface PRXPlayer : UIResponder {
   BOOL holdPlayback;
-  BOOL waitingForPlayableToBeReadyForPlayback;
-  BOOL audioSessionIsInterrupted;
-  BOOL playerIsBuffering;
-  BOOL networkBecameUnreachable;
-  
-  NSDate *dateAtAudioPlaybackInterruption;
   
   NSUInteger retryCount;
+  
+  id playerPeriodicTimeObserver;
+  
+  NSUInteger backgroundKeepAliveTaskID;
+  NSDate *dateAtAudioPlaybackInterruption;
+  
+  NetworkStatus previousReachabilityStatus;
+  NSString *previousReachabilityString;
 }
 
 + (instancetype)sharedPlayer;
-- (id)initWithAudioSessionManagement:(BOOL)manageSession;
 
-@property (nonatomic, strong) NSObject<PRXPlayable> *currentPlayable;
-@property (nonatomic, strong) AVPlayer *player;
-@property (nonatomic, strong, readonly) AVPlayerItem *playerItem;
-@property (nonatomic, readonly) BOOL isPrebuffering;
-@property (nonatomic, readonly) float buffer;
-@property (nonatomic, strong, readonly) NSArray *observers;
+@property (nonatomic, strong, readonly) AVPlayer *player;
 
-- (void)playPlayable:(id<PRXPlayable>)playable;
-- (void)loadPlayable:(id<PRXPlayable>)playable;
-- (void)togglePlayable:(id<PRXPlayable>)playable;
+@property (nonatomic, readonly) PRXPlayerState state;
+@property (nonatomic, readonly) NSTimeInterval buffer;
 
-- (float)rateForPlayable:(id<PRXPlayable>)playable;
-- (BOOL)isCurrentPlayable:(NSObject<PRXPlayable> *)playable;
-- (BOOL)isWaitingForPlayable:(NSObject<PRXPlayable> *)playable;
+@property (nonatomic, strong) id<PRXPlayerItem> playerItem;
+
+@property (nonatomic, weak) id<PRXPlayerDelegate> delegate;
+
+- (void)loadPlayerItem:(id<PRXPlayerItem>)playerItem;
+- (void)playPlayerItem:(id<PRXPlayerItem>)playerItem;
+- (void)togglePlayerItem:(id<PRXPlayerItem>)playerItem;
 
 - (void)play;
 - (void)pause;
-- (void)togglePlayPause;
+- (void)toggle;
 - (void)stop;
 
-- (id)addObserver:(id<PRXPlayerObserver>)observer persistent:(BOOL)persistent;
-- (void)removeObserver:(id<PRXPlayerObserver>)observer;
+// this will go away
+- (NSDate *)dateAtAudioPlaybackInterruption;
 
 @end
 
-@protocol PRXPlayerObserver <NSObject>
+@protocol PRXPlayerItem <NSObject>
+
+@property (nonatomic, strong, readonly) AVAsset *playerAsset;
+
+- (BOOL)isEqualToPlayerItem:(id<PRXPlayerItem>)aPlayerItem;
 
 @optional
 
-- (void)observedPlayerStatusDidChange:(AVPlayer *)player;
-- (void)observedPlayerDidObservePeriodicTimeInterval:(AVPlayer *)player;
-- (void)observedPlayerDidObserveLongPeriodicTimeInterval:(AVPlayer *)player;
+@property (nonatomic, strong, readonly) NSDictionary *mediaItemProperties;
+
+// TODO better names
+@property (nonatomic, readonly) CMTime playerTime;
+@property (nonatomic, readonly) CMTime playerDuration;
+
+- (void)setPlayerTime:(CMTime)playerTime;
+- (void)setPlayerDuration:(CMTime)playerDuration;
+
+@end
+
+@protocol PRXPlayerDelegate <NSObject>
+
+//- (void)player:(AVPlayer *)player changedToTime:(CMTime);
+//- (void)playerDidTraverseSoftEndBoundaryTime:(PRXPlayer *)player;
+
+@optional
+
+- (void)player:(PRXPlayer *)player playerItemDidChange:(NSDictionary *)change;
+- (void)player:(PRXPlayer *)player currentItemStatusDidChange:(NSDictionary *)change;
+
+- (float)filePlaybackRateForPlayer:(PRXPlayer *)player;
+- (BOOL)playerAllowsPlaybackViaWWAN:(PRXPlayer *)player;
+- (NSUInteger)retryLimitForPlayer:(PRXPlayer *)player;
 
 @end

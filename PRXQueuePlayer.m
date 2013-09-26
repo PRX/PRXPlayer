@@ -22,8 +22,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#import "PRXQueuePlayer.h"
 #import "PRXPlayer_private.h"
+#import "PRXQueuePlayer.h"
 
 @implementation PRXQueuePlayer
 
@@ -36,17 +36,17 @@
   return self;
 }
 
-- (void)loadAndPlayPlayable:(id<PRXPlayable>)playable {
-  if ([self queueContainsPlayable:playable]) {
-    self.queue.position = [self nextQueuePositionForPlayable:playable];
-    [super loadAndPlayPlayable:playable];
+- (void)setPlayerItem:(id<PRXPlayerItem>)playerItem {
+  if ([self queueContainsPlayerItem:playerItem]) {
+    self.queue.position = [self nextQueuePositionForPlayerItem:playerItem];
+    super.playerItem = playerItem;
   } else {
-    if (playable) {
-      [self enqueueAfterCurrentPosition:playable];
+    if (playerItem) {
+      [self enqueueAfterCurrentPosition:playerItem];
     }
     
-    if ([self queueContainsPlayable:playable]) {
-      [self loadAndPlayPlayable:playable];
+    if ([self queueContainsPlayerItem:playerItem]) {
+      super.playerItem = playerItem;
     }
   }
 }
@@ -58,7 +58,7 @@
     if (self.queue.position == NSNotFound) {
       [self moveToQueuePosition:0];
     }
-    [self playPlayable:self.queue[self.queue.position]];
+    [self playPlayerItem:self.queue[self.queue.position]];
   }
 }
 
@@ -66,22 +66,26 @@
   NSUInteger keyValueChangeKind = [change[NSKeyValueChangeKindKey] integerValue];
   
   if (keyValueChangeKind == NSKeyValueChangeSetting && self.player.currentItem.status == AVPlayerStatusFailed) {
-    PRXLog(@"Player status failed %@", self.player.currentItem.error);
+//    PRXLog(@"Player status failed %@", self.player.currentItem.error);
     // the AVPlayer has trouble switching from stream to file and vice versa
     // if we get an error condition, start over playing the thing it tried to play.
     // Once a player fails it can't be used for playback anymore!
-    waitingForPlayableToBeReadyForPlayback = NO;
     
-    if (retryCount < self.retryLimit) {
-      [super playerItemStatusDidChange:change];
+    NSUInteger _retryLimit = 3;
+    
+    if ([self.delegate respondsToSelector:@selector(retryLimitForPlayer:)]) {
+      _retryLimit = [self.delegate retryLimitForPlayer:self];
+    }
+    
+    if (retryCount < _retryLimit) {
+      [super mediaPlayerCurrentItemStatusDidChange:change];
     } else {
-      [self reportPlayerStatusChangeToObservers];
+      [self postGeneralChangeNotification];
       [self seekForward];
     }
   } else {
-    [super playerItemStatusDidChange:change];
+    [super mediaPlayerCurrentItemStatusDidChange:change];
   }
-  
 }
 
 #pragma mark - Next and previous
@@ -119,7 +123,7 @@
 - (void)seekToQueuePosition:(NSUInteger)position {
   if ([self canMoveToQueuePosition:position]) {
     [self moveToQueuePosition:position];
-    [self preparePlayable:self.queue[self.queue.position]];
+    self.playerItem = self.queue[self.queue.position];
   }
 }
 
@@ -149,49 +153,49 @@
 
 #pragma mark - Queue manipulation
 
-- (void)enqueue:(id<PRXPlayable>)playable atPosition:(NSUInteger)position {
-  [self.queue insertObject:playable atIndex:position];
+- (void)enqueue:(id<PRXPlayerItem>)playerItem atPosition:(NSUInteger)position {
+  [self.queue insertObject:playerItem atIndex:position];
   
-  if (!self.currentPlayable) {
+  if (!self.playerItem) {
     if (self.queue.position == NSNotFound) {
       self.queue.position = 0;
     }
     
-    [self loadPlayable:self.queue[self.queue.position]];
+    [self loadPlayerItem:self.queue[self.queue.position]];
   }
 }
 
-- (void)enqueue:(id<PRXPlayable>)playable {
-  [self enqueue:playable atPosition:self.queue.count];
+- (void)enqueue:(id<PRXPlayerItem>)playerItem {
+  [self enqueue:playerItem atPosition:self.queue.count];
 }
 
-- (void)enqueueAfterCurrentPosition:(id<PRXPlayable>)playable {
+- (void)enqueueAfterCurrentPosition:(id<PRXPlayerItem>)playerItem {
   NSUInteger position = (self.queue.count == 0 ? 0 : (self.queue.position + 1));
-  [self enqueue:playable atPosition:position];
+  [self enqueue:playerItem atPosition:position];
 }
 
 - (void)dequeueFromPosition:(NSUInteger)position {
   [self.queue removeObjectAtIndex:position];
 }
 
-- (void)dequeue:(id<PRXPlayable>)playable {
-  NSUInteger position = [self firstQueuePositionForPlayable:playable];
+- (void)dequeue:(id<PRXPlayerItem>)playerItem {
+  NSUInteger position = [self firstQueuePositionForPlayerItem:playerItem];
   if (position != NSNotFound) {
     [self dequeueFromPosition:position];
   }
 }
 
-- (void)movePlayableFromPosition:(NSUInteger)position toPosition:(NSUInteger)newPosition {
+- (void)movePlayerItemFromPosition:(NSUInteger)position toPosition:(NSUInteger)newPosition {
   if ([self canMoveToQueuePosition:position] && [self canMoveToQueuePosition:newPosition]) {
     // If the current item is being moved, we
     // want to make sure the position in the queue
     // follows it.
     BOOL moveQueuePositionToNewPosition = (position == self.queue.position);
     
-    id<PRXPlayable> playable = self.queue[position];
+    id<PRXPlayerItem> playerItem = self.queue[position];
     
     [self.queue removeObjectAtIndex:position];
-    [self.queue insertObject:playable atIndex:newPosition];
+    [self.queue insertObject:playerItem atIndex:newPosition];
     
     if (moveQueuePositionToNewPosition) {
       self.queue.position = newPosition;
@@ -199,72 +203,72 @@
   }
 }
 
-- (void)requeue:(id<PRXPlayable>)playable atPosition:(NSUInteger)position {
-  NSUInteger index = [self firstQueuePositionForPlayable:playable];
+- (void)requeue:(id<PRXPlayerItem>)playerItem atPosition:(NSUInteger)position {
+  NSUInteger index = [self firstQueuePositionForPlayerItem:playerItem];
   if (index != NSNotFound) {
-    [self movePlayableFromPosition:index toPosition:position];
+    [self movePlayerItemFromPosition:index toPosition:position];
   }
 }
 
-- (void)enqueuePlayables:(NSArray *)playables atPosition:(NSUInteger)position {
+- (void)enqueuePlayerItems:(NSArray *)playerItems atPosition:(NSUInteger)position {
   NSUInteger iPosition = position;
   
-  for (id<PRXPlayable> playable in playables) {
-    [self enqueue:playable atPosition:iPosition];
+  for (id<PRXPlayerItem> playerItem in playerItems) {
+    [self enqueue:playerItem atPosition:iPosition];
     iPosition++;
   }
 }
 
-- (void)enqueuePlayables:(NSArray *)playables {
-  [self enqueuePlayables:playables atPosition:self.queue.count];
+- (void)enqueuePlayerItems:(NSArray *)playerItems {
+  [self enqueuePlayerItems:playerItems atPosition:self.queue.count];
 }
 
 - (void)emptyQueue {
   [self.queue removeAllObjects];
   
   if (self.player.rate != 0.0f) {
-    [self enqueue:self.currentPlayable];
-    [self reportPlayerStatusChangeToObservers];
+    [self enqueue:self.playerItem];
+    [self postGeneralChangeNotification];
   }
 }
 
 #pragma mark - Queue queries
 
-- (BOOL)queueContainsPlayable:(id<PRXPlayable>)playable {
-  return ([self firstQueuePositionForPlayable:playable] != NSNotFound);
+- (BOOL)queueContainsPlayerItem:(id<PRXPlayerItem>)playerItem {
+  return ([self firstQueuePositionForPlayerItem:playerItem] != NSNotFound);
 }
 
-- (id<PRXPlayable>)playableAtQueuePosition:(NSUInteger)position {
+- (id<PRXPlayerItem>)playerItemAtQueuePosition:(NSUInteger)position {
   return [self.queue objectAtIndex:position];
 }
 
-- (id)playableAtCurrentQueuePosition {
+- (id)playerItemAtCurrentQueuePosition {
   return [self.queue objectAtIndex:self.queue.position];
 }
 
-- (NSUInteger)firstQueuePositionForPlayable:(id<PRXPlayable>)playable {
-  return [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable> aPlayable, NSUInteger idx, BOOL *stop) {
-    return [self playable:aPlayable isEqualToPlayable:playable];
+- (NSUInteger)firstQueuePositionForPlayerItem:(id<PRXPlayerItem>)playerItem {
+  return [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayerItem> aPlayerItem, NSUInteger idx, BOOL *stop) {
+    return [aPlayerItem isEqualToPlayerItem:playerItem];
   }];
 }
 
-- (NSUInteger)nextQueuePositionForPlayable:(id<PRXPlayable>)playable {
+- (NSUInteger)nextQueuePositionForPlayerItem:(id<PRXPlayerItem>)playerItem {
   NSUInteger position;
   
-  position = [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayable> aPlayable, NSUInteger idx, BOOL* stop) {
-    return ([self playable:aPlayable isEqualToPlayable:playable] && idx >= self.queue.position);
+  position = [self.queue indexOfObjectPassingTest:^BOOL(id<PRXPlayerItem> aPlayerItem, NSUInteger idx, BOOL* stop) {
+    return ([aPlayerItem isEqualToPlayerItem:playerItem] && idx >= self.queue.position);
   }];
   
   if (position == NSNotFound) {
-    position = [self firstQueuePositionForPlayable:playable];
+    position = [self firstQueuePositionForPlayerItem:playerItem];
   }
   
   return position;
 }
 
-- (NSIndexSet *)allQueuePositionsForPlayable:(id<PRXPlayable>)playable {
-  return [self.queue indexesOfObjectsPassingTest:^BOOL(id<PRXPlayable>aPlayable, NSUInteger idx, BOOL *stop) {
-    return [self playable:aPlayable isEqualToPlayable:playable];
+- (NSIndexSet *)allQueuePositionsForPlayerItem:(id<PRXPlayerItem>)playerItem {
+  return [self.queue indexesOfObjectsPassingTest:^BOOL(id<PRXPlayerItem>aPlayerItem, NSUInteger idx, BOOL *stop) {
+    return [aPlayerItem isEqualToPlayerItem:playerItem];
   }];
 }
 
@@ -305,13 +309,13 @@
 #pragma mark - PRXAudioQueue delegate
 
 - (void)queueDidChange:(PRXPlayerQueue*)queue {
-  [self reportPlayerStatusChangeToObservers];
+  [self postGeneralChangeNotification];
 }
 
 #pragma mark -- Overrides
 
 - (void)playerItemDidPlayToEndTime:(NSNotification *)notification {
-  [super playerItemDidPlayToEndTime:notification];
+  [super mediaPlayerCurrentItemDidPlayToEndTime:notification];
   [self seekForward];
 }
 

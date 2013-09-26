@@ -133,18 +133,21 @@ static PRXPlayer* sharedPlayerInstance;
     _currentPlayerItem = currentPlayerItem;
     
     if (!self.player) {
+      dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         self.player = [AVPlayer playerWithPlayerItem:self.currentPlayerItem];
         
         float version = UIDevice.currentDevice.systemVersion.floatValue;
         
         if (version >= 6.0f) {
-            self.player.allowsExternalPlayback = NO;
+          self.player.allowsExternalPlayback = NO;
         } else {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-            self.player.allowsAirPlayVideo = NO;
+          self.player.allowsAirPlayVideo = NO;
 #pragma clang diagnostic pop
         }
+
+      });
     } else {
         [self.player replaceCurrentItemWithPlayerItem:self.currentPlayerItem];
     }

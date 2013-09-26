@@ -68,7 +68,7 @@
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     
-    refreshUITimer = [NSTimer scheduledTimerWithTimeInterval:0.4 target:self selector:@selector(labelize:) userInfo:nil repeats:YES];
+//    refreshUITimer = [NSTimer scheduledTimerWithTimeInterval:0.4 target:self selector:@selector(labelize:) userInfo:nil repeats:YES];
 
 }
 

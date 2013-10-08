@@ -99,6 +99,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       [self.player removeObserver:self forKeyPath:@"status"];
       [self.player removeObserver:self forKeyPath:@"rate"];
       [self.player removeObserver:self forKeyPath:@"error"];
+      
       if (playerPeriodicTimeObserver) {
         [self.player removeTimeObserver:playerPeriodicTimeObserver];
         playerPeriodicTimeObserver = nil;
@@ -626,11 +627,13 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       [self.player addObserver:self forKeyPath:@"error" options:options context:PRXPlayerAVPlayerRateContext];
       
       __block id _self = self;
+      
       dispatch_async(dispatch_get_main_queue(), ^{
         if (playerPeriodicTimeObserver) {
           [self.player removeTimeObserver:playerPeriodicTimeObserver];
           playerPeriodicTimeObserver = nil;
         }
+        
         playerPeriodicTimeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(1, 1000) queue:dispatch_queue_create(periodicTimeObserverQueueLabel, NULL) usingBlock:^(CMTime time) {
           [_self didObservePeriodicTimeChange:time];
         }];

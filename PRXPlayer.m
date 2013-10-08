@@ -93,7 +93,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
     // before changing to the new one
     @synchronized(_player) {
         if (self.player) {
-            NSLog(@"Stopping to observer AVPlayer");
+            NSLog(@"Stopping to observe AVPlayer");
             
             [self.player removeObserver:self forKeyPath:@"currentItem"];
             [self.player removeObserver:self forKeyPath:@"status"];

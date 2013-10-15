@@ -1,0 +1,3 @@
+[submodule "NewPlayerTest/PRXPlayer"]
+	path = NewPlayerTest/PRXPlayer
+	url = git@github.com:PRX/PRXPlayer.git

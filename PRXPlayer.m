@@ -383,7 +383,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
     return [self.delegate playerAllowsPlaybackViaWWAN:self];
   }
   
-  return NO;
+  return YES;
 }
 
 - (BOOL)allowsLoadingOfAsset:(AVAsset *)asset {
@@ -513,6 +513,12 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   id newValue = change[NSKeyValueChangeNewKey];
   id oldValue = change[NSKeyValueChangeOldKey];
   
+  if ([self.delegate respondsToSelector:@selector(player:playerItemDidChange:)]) {
+    [self.delegate player:self playerItemDidChange:change];
+  }
+  
+  [self postGeneralChangeNotification];
+  
   if (valueChangeKind == NSKeyValueChangeSetting && [newValue conformsToProtocol:@protocol(PRXPlayerItem)]) {
     NSLog(@"PRXPlayerItem was set");
     
@@ -600,12 +606,6 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       }
     }
   }
-  
-  if ([self.delegate respondsToSelector:@selector(player:playerItemDidChange:)]) {
-    [self.delegate player:self playerItemDidChange:change];
-  }
-  
-  [self postGeneralChangeNotification];
 }
 
 - (void)mediaPlayerDidChange:(NSDictionary *)change {

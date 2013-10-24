@@ -887,8 +887,15 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   self.playerItem = playerItem;
 }
 
-- (void)togglePlayerItem:(id<PRXPlayerItem>)playerItem {
-  if ([playerItem.playerAsset isKindOfClass:AVURLAsset.class]
+- (void)togglePlayerItem:(id<PRXPlayerItem>)playerItem orCancel:(BOOL)cancel {
+  if (cancel && (self.state == PRXPlayerStateLoading ||
+                 self.state == PRXPlayerStateBuffering ||
+                 self.state == PRXPlayerStateWaiting)) {
+//    [self stop];
+    [self pause];
+//    holdPlayback = YES;
+//    [self reloadPlayerItem:playerItem];
+  } else if ([playerItem.playerAsset isKindOfClass:AVURLAsset.class]
       && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]
       && [((AVURLAsset *)self.player.currentItem.asset).URL isEqual:((AVURLAsset *)playerItem.playerAsset).URL]
       && self.player.rate != 0.0f) {
@@ -896,6 +903,10 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   } else {
     [self playPlayerItem:playerItem];
   }
+}
+
+- (void)togglePlayerItem:(id<PRXPlayerItem>)playerItem {
+  [self togglePlayerItem:playerItem orCancel:NO];
 }
 
 - (void)reloadPlayerItem:(id<PRXPlayerItem>)playerItem {

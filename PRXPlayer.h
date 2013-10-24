@@ -71,6 +71,7 @@ typedef NS_ENUM(NSUInteger, PRXPlayerState) {
 
 - (void)loadPlayerItem:(id<PRXPlayerItem>)playerItem;
 - (void)playPlayerItem:(id<PRXPlayerItem>)playerItem;
+- (void)togglePlayerItem:(id<PRXPlayerItem>)playerItem orCancel:(BOOL)cancel;
 - (void)togglePlayerItem:(id<PRXPlayerItem>)playerItem;
 
 - (void)play;

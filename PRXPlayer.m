@@ -891,10 +891,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   if (cancel && (self.state == PRXPlayerStateLoading ||
                  self.state == PRXPlayerStateBuffering ||
                  self.state == PRXPlayerStateWaiting)) {
-//    [self stop];
     [self pause];
-//    holdPlayback = YES;
-//    [self reloadPlayerItem:playerItem];
   } else if ([playerItem.playerAsset isKindOfClass:AVURLAsset.class]
       && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]
       && [((AVURLAsset *)self.player.currentItem.asset).URL isEqual:((AVURLAsset *)playerItem.playerAsset).URL]

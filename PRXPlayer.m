@@ -683,6 +683,10 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
     }
   }
   
+  if ([self.delegate respondsToSelector:@selector(player:rateDidChange:)]) {
+    [self.delegate player:self rateDidChange:change];
+  }
+  
   [self postGeneralChangeNotification];
 }
 

@@ -113,6 +113,7 @@ typedef NS_ENUM(NSUInteger, PRXPlayerState) {
 
 - (void)player:(PRXPlayer *)player playerItemDidChange:(NSDictionary *)change;
 - (void)player:(PRXPlayer *)player currentItemStatusDidChange:(NSDictionary *)change;
+- (void)player:(PRXPlayer *)player rateDidChange:(NSDictionary *)change;
 
 - (float)filePlaybackRateForPlayer:(PRXPlayer *)player;
 - (BOOL)playerAllowsPlaybackViaWWAN:(PRXPlayer *)player;

@@ -906,6 +906,39 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 }
 
 - (void)togglePlayerItem:(id<PRXPlayerItem>)playerItem orCancel:(BOOL)cancel {
+  NSLog(@"------ %i", self.state);
+
+  if (!cancel) {
+    
+    if ([playerItem.playerAsset isKindOfClass:AVURLAsset.class]
+        && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]
+        && [((AVURLAsset *)self.player.currentItem.asset).URL isEqual:((AVURLAsset *)playerItem.playerAsset).URL]
+        && self.player.rate != 0.0f) {
+      [self pause];
+    } else {
+      [self playPlayerItem:playerItem];
+    }
+    
+    return;
+  } else {
+    
+    if ((self.state == PRXPlayerStateLoading ||
+         self.state == PRXPlayerStateBuffering ||
+         self.state == PRXPlayerStateWaiting)) {
+      [self stop];
+    } else if ([playerItem.playerAsset isKindOfClass:AVURLAsset.class]
+        && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]
+        && [((AVURLAsset *)self.player.currentItem.asset).URL isEqual:((AVURLAsset *)playerItem.playerAsset).URL]
+        && self.player.rate != 0.0f) {
+      [self pause];
+    } else {
+      [self playPlayerItem:playerItem];
+    }
+    
+    return;
+  }
+  
+
   if (cancel && (self.state == PRXPlayerStateLoading ||
                  self.state == PRXPlayerStateBuffering ||
                  self.state == PRXPlayerStateWaiting)) {

@@ -77,6 +77,7 @@ typedef NS_ENUM(NSUInteger, PRXPlayerState) {
 - (void)play;
 - (void)pause;
 - (void)toggle;
+- (void)toggleOrCancel;
 - (void)stop;
 
 // this will go away

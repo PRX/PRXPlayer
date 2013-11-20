@@ -231,6 +231,16 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   (self.player.rate == 0.0f) ? [self play] : [self pause];
 }
 
+- (void)toggleOrCancel {
+  if (self.state == PRXPlayerStateLoading ||
+      self.state == PRXPlayerStateBuffering ||
+      self.state == PRXPlayerStateWaiting) {
+    [self pause];
+  } else {
+    [self toggle];
+  }
+}
+
 - (void)stop {
   self.playerItem = nil;
 }

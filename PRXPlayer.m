@@ -803,8 +803,12 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
         NSLog(@"...and we don't have connectivity for a remote file/stream; flag for a restart when we do...");
         // TODO flag for retry
       } else {
-        NSLog(@"...but we still have connectivity, reloading remote files/streams to try again");
-        [self reloadPlayerItemWithRemoteAsset:self.playerItem];
+        if (self.player.externalPlaybackActive) {
+          NSLog(@"...still have connectivity, but AirPlay is borked, NOT trying again.");
+        } else {
+          NSLog(@"...but we still have connectivity, reloading remote files/streams to try again");
+          [self reloadPlayerItemWithRemoteAsset:self.playerItem];
+        }
       }
     } else {
       NSLog(@"Buffer went from empty to not empty");

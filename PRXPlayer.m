@@ -881,7 +881,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 
 - (void)mediaPlayerCurrentItemDidJumpTime:(NSNotification *)notification {
   // called when seeking and when setting rate >0
-  NSLog(@"mediaPlayerCurrentItemDidJumpTime");
+  [self publishMPNowPlayingInfoCenterNowPlayingInfo];
 }
 
 - (void)didObservePeriodicTimeChange:(CMTime)time {

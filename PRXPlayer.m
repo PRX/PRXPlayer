@@ -868,7 +868,9 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 }
 
 - (void)mediaPlayerCurrentItemDidPlayToEndTime:(NSNotification *)notification {
-  NSLog(@"mediaPlayerCurrentItemDidPlayToEndTime");
+  if ([self.delegate respondsToSelector:@selector(player:endTimeReachedForPlayerItem:)]) {
+    [self.delegate player:self endTimeReachedForPlayerItem:notification.object];
+  }
 }
 
 - (void)mediaPlayerCurrentItemDidJumpTime:(NSNotification *)notification {

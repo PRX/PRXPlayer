@@ -50,6 +50,7 @@ typedef NS_ENUM(NSUInteger, PRXPlayerState) {
   NSUInteger retryCount;
   
   id playerPeriodicTimeObserver;
+  id playerSoftEndBoundaryTimeObserver;
   
   NSUInteger backgroundKeepAliveTaskID;
   NSDate *dateAtAudioPlaybackInterruption;
@@ -117,6 +118,7 @@ typedef NS_ENUM(NSUInteger, PRXPlayerState) {
 
 - (float)filePlaybackRateForPlayer:(PRXPlayer *)player;
 - (BOOL)playerAllowsPlaybackViaWWAN:(PRXPlayer *)player;
+- (float)softEndBoundaryProgressForPlayer:(PRXPlayer *)player;
 - (NSUInteger)retryLimitForPlayer:(PRXPlayer *)player;
 
 @end

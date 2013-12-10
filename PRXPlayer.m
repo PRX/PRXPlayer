@@ -104,6 +104,11 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
         [self.player removeTimeObserver:playerPeriodicTimeObserver];
         playerPeriodicTimeObserver = nil;
       }
+      
+      if (playerSoftEndBoundaryTimeObserver) {
+        [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+        playerSoftEndBoundaryTimeObserver = nil;
+      }
     }
     _player = player;
   }
@@ -639,6 +644,11 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       __block id _self = self;
       
       dispatch_async(dispatch_get_main_queue(), ^{
+        if (playerSoftEndBoundaryTimeObserver) {
+          [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+          playerSoftEndBoundaryTimeObserver = nil;
+        }
+        
         if (playerPeriodicTimeObserver) {
           [self.player removeTimeObserver:playerPeriodicTimeObserver];
           playerPeriodicTimeObserver = nil;
@@ -765,6 +775,36 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 
 - (void)mediaPlayerCurrentItemDidBecomeReadyToPlay {
   [self publishMPNowPlayingInfoCenterNowPlayingInfo];
+  
+  if (self.player.currentItem.duration.value > 0) {
+    Float64 duration = CMTimeGetSeconds(self.player.currentItem.duration);
+    
+    Float64 progress = 0.95f;
+    
+    if ([self.delegate respondsToSelector:@selector(softEndBoundaryProgressForPlayer:)]) {
+      progress = [self.delegate softEndBoundaryProgressForPlayer:self];
+    }
+    
+    int64_t boundaryTime = (duration * progress);
+    CMTime boundary = CMTimeMakeWithSeconds(boundaryTime, 10);
+    
+    NSValue* _boundary = [NSValue valueWithCMTime:boundary];
+    
+    __block id _self = self;
+    
+    if (playerSoftEndBoundaryTimeObserver) {
+      [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+      playerSoftEndBoundaryTimeObserver = nil;
+    }
+    
+    NSLog(@"Adding soft end boundary observer: %@s (%f)", @(CMTimeGetSeconds(boundary)), progress);
+    playerSoftEndBoundaryTimeObserver = [self.player addBoundaryTimeObserverForTimes:@[ _boundary ]
+                                                                               queue:nil
+                                                                          usingBlock:^{
+                                                                            [_self didObserveSoftBoundaryTime];
+                                                                          }];
+  }
+  
   [self bar];
 }
 

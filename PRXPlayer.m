@@ -973,8 +973,6 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 }
 
 - (void)togglePlayerItem:(id<PRXPlayerItem>)playerItem orCancel:(BOOL)cancel {
-  NSLog(@"------ %i", self.state);
-
   if (!cancel) {
     
     if ([playerItem.playerAsset isKindOfClass:AVURLAsset.class]

@@ -466,8 +466,14 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
           self.player = [AVPlayer playerWithPlayerItem:playerItem];
         });
       } else {
+        BOOL _hold = holdPlayback;
         NSLog(@"...Failed to load tracks for asset %@", asset);
         holdPlayback = YES; // until there's something better to do; may actually be worth stopping
+        
+        if ([self.delegate respondsToSelector:@selector(player:failedToLoadTracksForAsset:holdPlayback:)]) {
+          [self.delegate player:self failedToLoadTracksForAsset:asset holdPlayback:_hold];
+        }
+        
         // TODO
         // loading the tracks using a player url asset is more reliable and has already been tried
         // by the time we get here.  but if it fails we can still try to set the player item directly.
@@ -824,7 +830,12 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
     self.playerItem = retryPlayerItem;
   } else {
     NSLog(@"Retries failed, stopping.");
+    BOOL _hold = holdPlayback;
     [self stop];
+    
+    if ([self.delegate respondsToSelector:@selector(playerFailedToBecomeReadyToPlay:holdPlayback:)]) {
+      [self.delegate playerFailedToBecomeReadyToPlay:self holdPlayback:_hold];
+    }
   }
 }
 

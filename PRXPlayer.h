@@ -112,6 +112,7 @@ typedef NS_ENUM(NSUInteger, PRXPlayerState) {
 
 @optional
 
+- (void)player:(PRXPlayer *)player softBoundaryTimeReachedForPlayerItem:(AVPlayerItem *)playerItem;
 - (void)player:(PRXPlayer *)player playerItemDidChange:(NSDictionary *)change;
 - (void)player:(PRXPlayer *)player currentItemStatusDidChange:(NSDictionary *)change;
 - (void)player:(PRXPlayer *)player rateDidChange:(NSDictionary *)change;

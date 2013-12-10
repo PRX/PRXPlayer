@@ -900,6 +900,14 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   }
 }
 
+- (void)didObserveSoftBoundaryTime {
+  if ([self.delegate respondsToSelector:@selector(player:softBoundaryTimeReachedForPlayerItem:)]) {
+    [self.delegate player:self softBoundaryTimeReachedForPlayerItem:self.player.currentItem];
+  }
+  
+  [self publishMPNowPlayingInfoCenterNowPlayingInfo];
+}
+
 - (void)reachabilityDidChange:(NSNotification *)notification {
   Reachability *reach = notification.object;
   

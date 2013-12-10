@@ -260,7 +260,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 	return YES;
 }
 
-- (NSDictionary*)MPNowPlayingInfoCenterNowPlayingInfo {
+- (NSDictionary *)MPNowPlayingInfoCenterNowPlayingInfo {
   NSMutableDictionary *info = NSMutableDictionary.dictionary;
   
   if ([self.playerItem respondsToSelector:@selector(mediaItemProperties)]) {
@@ -296,8 +296,14 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
                                                              keySpace:AVMetadataKeySpaceCommon];
     if (artworkMetadata.count > 0) {
       AVMetadataItem* artworkMetadataItem = artworkMetadata[0];
+      UIImage* artworkImage;
       
-      UIImage* artworkImage = [UIImage imageWithData:artworkMetadataItem.value[@"data"]];
+      if ([artworkMetadataItem.value respondsToSelector:@selector(objectForKeyedSubscript:)]) {
+        artworkImage = [UIImage imageWithData:artworkMetadataItem.value[@"data"]];
+      } else if ([artworkMetadataItem.value isKindOfClass:NSData.class]) {
+        artworkImage = [UIImage imageWithData:artworkMetadataItem.dataValue];
+      }
+      
       MPMediaItemArtwork* artwork = [[MPMediaItemArtwork alloc] initWithImage:artworkImage];
       
       info[MPMediaItemPropertyArtwork] = artwork;

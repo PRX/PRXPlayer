@@ -153,7 +153,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   }
   
   AVAsset *playerAssset = self.player.currentItem.asset;
-  AVAsset *itemAsset = self.playerItem.playerAsset;
+  AVAsset *itemAsset = self.playerItemAsset;
   
   BOOL isPlayerAssetURLAsset = [playerAssset isKindOfClass:AVURLAsset.class];
   BOOL isItemAssetURLAsset = [itemAsset isKindOfClass:AVURLAsset.class];
@@ -206,10 +206,10 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   
   // If the current player asset doesn't match the current item asset
   // simply starting playback is almost certainly unexpected behavior
-  if ([self.playerItem.playerAsset isKindOfClass:AVURLAsset.class]
+  if ([self.playerItemAsset isKindOfClass:AVURLAsset.class]
       && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]) {
     AVURLAsset *currentAsset = (AVURLAsset *)self.player.currentItem.asset;
-    AVURLAsset *itemAsset = (AVURLAsset *)self.playerItem.playerAsset;
+    AVURLAsset *itemAsset = (AVURLAsset *)self.playerItemAsset;
     
     if (![currentAsset.URL isEqual:itemAsset.URL]) {
       NSLog(@"Current item does not match the loaded item, starting playback now would likely result in unexpected behavior");
@@ -431,6 +431,16 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 
 #pragma mark - Loading assets
 
+- (AVAsset *)playerItemAsset {
+  AVAsset *asset = self.playerItem.playerAsset;
+  
+  if ([self.delegate respondsToSelector:@selector(player:assetForPlayerItem:)]) {
+    asset = [self.delegate player:self assetForPlayerItem:self.playerItem];
+  }
+  
+  return asset;
+}
+
 - (void)loadTracksForAsset:(AVAsset *)asset {
   if (![self allowsLoadingOfAsset:asset]) {
     return;
@@ -454,9 +464,9 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
           if (!self.playerItem) {
             NSLog(@"PlayerItem was removed before tracks could load, so they're being ignored");
             return;
-          } else if ([asset isKindOfClass:AVURLAsset.class] && [self.playerItem.playerAsset isKindOfClass:AVURLAsset.class]) {
+          } else if ([asset isKindOfClass:AVURLAsset.class] && [self.playerItemAsset isKindOfClass:AVURLAsset.class]) {
             AVURLAsset *urlAsset = (AVURLAsset *)asset;
-            AVURLAsset *itemURLAsset = (AVURLAsset *)self.playerItem.playerAsset;
+            AVURLAsset *itemURLAsset = (AVURLAsset *)self.playerItemAsset;
             
             if (![urlAsset.URL.absoluteString isEqualToString:itemURLAsset.URL.absoluteString]) {
               NSLog(@"PlayerItem asset no longer matches this asset, so the loaded tracks are being ignored");
@@ -564,14 +574,14 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
     
     if (previousPlayerItemDidNotConformToProtocol) {
       NSLog(@"No previous player item was set; no reason not to load tracks for new one");
-      [self loadTracksForAsset:self.playerItem.playerAsset];
+      [self loadTracksForAsset:self.playerItemAsset];
       return;
     } else {
       BOOL newPlayerItemHasNoURLAssetForComparison = ![newPlayerItem.playerAsset isKindOfClass:AVURLAsset.class];
       
       if (newPlayerItemHasNoURLAssetForComparison) {
         NSLog(@"New asset isn't a URL asset, so we can't make any checks; just load the tracks");
-        [self loadTracksForAsset:self.playerItem.playerAsset];
+        [self loadTracksForAsset:self.playerItemAsset];
         return;
       } else {
         id<PRXPlayerItem> oldPlayerItem = oldValue;
@@ -597,7 +607,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
             // This will not seemlessly transition between resources unless you are maintaning
             // position state on the PRXPlayerItem, which will be used after the tracks load.
             // Otherwise each transition will restart from the beginning.
-            [self loadTracksForAsset:self.playerItem.playerAsset];
+            [self loadTracksForAsset:self.playerItemAsset];
             return;
           } else {
             // Old and new PlayerItem were equal, and the new item's asset
@@ -620,14 +630,14 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
             return;
           } else {
             NSLog(@"PlayerItems and Asset URLs have changed; load tracks for new PlayerItem");
-            [self loadTracksForAsset:self.playerItem.playerAsset];
+            [self loadTracksForAsset:self.playerItemAsset];
             return;
           }
         } else {
           // PlayerItem changed but old item's asset isn't a URL asset, so we
           // can't make any good checks; just load the tracks
           NSLog(@"Couldn't compare new PlayerItem with old asset, so load its tracks");
-          [self loadTracksForAsset:self.playerItem.playerAsset];
+          [self loadTracksForAsset:self.playerItemAsset];
           return;
         }
       }
@@ -973,11 +983,16 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 }
 
 - (void)togglePlayerItem:(id<PRXPlayerItem>)playerItem orCancel:(BOOL)cancel {
+  AVAsset *playerItemAsset = playerItem.playerAsset;
+  
+  if ([self.delegate respondsToSelector:@selector(player:assetForPlayerItem:)]) {
+    playerItemAsset = [self.delegate player:self assetForPlayerItem:playerItem];
+  }
+  
   if (!cancel) {
-    
-    if ([playerItem.playerAsset isKindOfClass:AVURLAsset.class]
+    if ([playerItemAsset isKindOfClass:AVURLAsset.class]
         && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]
-        && [((AVURLAsset *)self.player.currentItem.asset).URL isEqual:((AVURLAsset *)playerItem.playerAsset).URL]
+        && [((AVURLAsset *)self.player.currentItem.asset).URL.absoluteString isEqual:((AVURLAsset *)playerItemAsset).URL.absoluteString]
         && self.player.rate != 0.0f) {
       [self pause];
     } else {
@@ -985,15 +1000,15 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
     }
     
     return;
-  } else {
+  } else { // try to cancel
     
     if ((self.state == PRXPlayerStateLoading ||
          self.state == PRXPlayerStateBuffering ||
          self.state == PRXPlayerStateWaiting)) {
       [self stop];
-    } else if ([playerItem.playerAsset isKindOfClass:AVURLAsset.class]
+    } else if ([playerItemAsset isKindOfClass:AVURLAsset.class]
         && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]
-        && [((AVURLAsset *)self.player.currentItem.asset).URL isEqual:((AVURLAsset *)playerItem.playerAsset).URL]
+        && [((AVURLAsset *)self.player.currentItem.asset).URL isEqual:((AVURLAsset *)playerItemAsset).URL]
         && self.player.rate != 0.0f) {
       [self pause];
     } else {
@@ -1002,15 +1017,14 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
     
     return;
   }
-  
 
   if (cancel && (self.state == PRXPlayerStateLoading ||
                  self.state == PRXPlayerStateBuffering ||
                  self.state == PRXPlayerStateWaiting)) {
     [self pause];
-  } else if ([playerItem.playerAsset isKindOfClass:AVURLAsset.class]
+  } else if ([playerItemAsset isKindOfClass:AVURLAsset.class]
       && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]
-      && [((AVURLAsset *)self.player.currentItem.asset).URL isEqual:((AVURLAsset *)playerItem.playerAsset).URL]
+      && [((AVURLAsset *)self.player.currentItem.asset).URL isEqual:((AVURLAsset *)playerItemAsset).URL]
       && self.player.rate != 0.0f) {
     [self pause];
   } else {
@@ -1033,8 +1047,14 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 }
 
 - (void)reloadPlayerItemWithRemoteAsset:(id<PRXPlayerItem>)playerItem {
-  if ([playerItem.playerAsset isKindOfClass:AVURLAsset.class]
-      && ![[(AVURLAsset *)playerItem.playerAsset URL] isFileURL]) {
+  AVAsset *playerItemAsset = playerItem.playerAsset;
+  
+  if ([self.delegate respondsToSelector:@selector(player:assetForPlayerItem:)]) {
+    playerItemAsset = [self.delegate player:self assetForPlayerItem:playerItem];
+  }
+  
+  if ([playerItemAsset isKindOfClass:AVURLAsset.class]
+      && ![[(AVURLAsset *)playerItemAsset URL] isFileURL]) {
     NSLog(@"Reloading PlayerItem with remote URL asset");
     [self reloadPlayerItem:playerItem];
   }

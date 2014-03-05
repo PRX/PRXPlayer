@@ -112,6 +112,8 @@ typedef NS_ENUM(NSUInteger, PRXPlayerState) {
 
 @optional
 
+- (AVAsset *)player:(PRXPlayer *)player assetForPlayerItem:(id<PRXPlayerItem>)playerItem;
+
 - (void)player:(PRXPlayer *)player failedToLoadTracksForAsset:(AVAsset *)asset holdPlayback:(BOOL)holdPlayback;
 - (void)playerFailedToBecomeReadyToPlay:(PRXPlayer *)player holdPlayback:(BOOL)holdPlayback;
 

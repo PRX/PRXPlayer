@@ -2,6 +2,8 @@
 
 PRXPlayer currently depends on a modified Reachability.
 
+    pod 'PRXPlayer', '~> 2.0'
+
 #### How to use
 
 PRXPlayer is a lightweight wrapper around AVPlayer. It's job is simply to provide a standard set of tools, for free, that most implementations of an media player would have anyway. This includes things like: retry logic, error handling, observing basic state changes, and monitoring playback. PRXPlayer provides an abstracted set of NSNotifications, which make it easy for your app to respond to nearly all relevant changes. More precise interaction with the AVPlayer and its items and assets can be achieved by implementing a PRXPlayerDelegate. Beyond that, you always have the ability to deal with the underlying AVPlayer instances directly, allowing for as much customization as you need.

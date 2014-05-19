@@ -1082,7 +1082,8 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       dateAtAudioPlaybackInterruption = nil;
     }
     
-    if ([self.playerItem respondsToSelector:@selector(playerTime)]) {
+    if ([self.playerItem respondsToSelector:@selector(playerTime)]
+    	&& CMTIME_IS_VALID(self.playerItem.playerTime)) {
       [self.player seekToTime:self.playerItem.playerTime completionHandler:^(BOOL finished) {
         if (finished && !holdPlayback) {
           NSLog(@"Current item is ready and will start playing; seeked to %f", CMTimeGetSeconds(self.playerItem.playerTime));

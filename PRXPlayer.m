@@ -913,7 +913,9 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   }
   
   if ([self.playerItem respondsToSelector:@selector(setPlayerTime:)]) {
-    self.playerItem.playerTime = time;
+    if (self.player.currentItem.status == AVPlayerStatusReadyToPlay) {
+      self.playerItem.playerTime = time;
+    }
   }
   
   if (fmodf(round(CMTimeGetSeconds(time)), 10.0f) == 9.0f) {

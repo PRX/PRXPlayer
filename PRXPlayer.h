@@ -52,6 +52,8 @@ typedef NS_ENUM(NSUInteger, PRXPlayerState) {
   id playerPeriodicTimeObserver;
   id playerSoftEndBoundaryTimeObserver;
   
+  BOOL ignoreTimeObservations;
+
   NSUInteger backgroundKeepAliveTaskID;
   NSDate *dateAtAudioPlaybackInterruption;
   

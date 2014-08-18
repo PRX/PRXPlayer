@@ -603,6 +603,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
           AVURLAsset *currentAsset = (AVURLAsset *)self.player.currentItem.asset;
           
           if (![currentAsset.URL isEqual:newURLAsset.URL]) {
+            ignoreTimeObservations = YES;
             NSLog(@"New PlayerItem matches currentPlayer item, but URLs differ. Resource likely changed; loading tracks");
             // This will not seemlessly transition between resources unless you are maintaning
             // position state on the PRXPlayerItem, which will be used after the tracks load.
@@ -629,11 +630,13 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
             [self bar];
             return;
           } else {
+            ignoreTimeObservations = YES;
             NSLog(@"PlayerItems and Asset URLs have changed; load tracks for new PlayerItem");
             [self loadTracksForAsset:self.playerItemAsset];
             return;
           }
         } else {
+          ignoreTimeObservations = YES;
           // PlayerItem changed but old item's asset isn't a URL asset, so we
           // can't make any good checks; just load the tracks
           NSLog(@"Couldn't compare new PlayerItem with old asset, so load its tracks");
@@ -895,40 +898,42 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 }
 
 - (void)didObservePeriodicTimeChange:(CMTime)time {
-  NSValue *time_v = [NSValue valueWithCMTime:time];
-  NSDictionary *userInfo = @{ @"time": time_v };
-  
-  AVURLAsset *asset;
-  
-  [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerTimeIntervalNotification
-                                                    object:self
-                                                  userInfo:userInfo];
-  
-  if ([self.player.currentItem.asset isKindOfClass:AVURLAsset.class]) {
-    asset = (AVURLAsset *)self.player.currentItem.asset;
-    
-    [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerTimeIntervalNotification
-                                                      object:asset.URL.absoluteString
-                                                    userInfo:userInfo];
-  }
-  
-  if ([self.playerItem respondsToSelector:@selector(setPlayerTime:)]) {
-    if (self.player.currentItem.status == AVPlayerStatusReadyToPlay) {
-      self.playerItem.playerTime = time;
-    }
-  }
-  
-  if (fmodf(round(CMTimeGetSeconds(time)), 10.0f) == 9.0f) {
-    [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerLongTimeIntervalNotification
-                                                      object:self
-                                                    userInfo:userInfo];
-    
-    if (asset) {
-      [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerLongTimeIntervalNotification
-                                                        object:asset.URL.absoluteString
+    if (!ignoreTimeObservations) {
+      NSValue *time_v = [NSValue valueWithCMTime:time];
+      NSDictionary *userInfo = @{ @"time": time_v };
+      
+      AVURLAsset *asset;
+      
+      [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerTimeIntervalNotification
+                                                        object:self
                                                       userInfo:userInfo];
+      
+      if ([self.player.currentItem.asset isKindOfClass:AVURLAsset.class]) {
+        asset = (AVURLAsset *)self.player.currentItem.asset;
+        
+        [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerTimeIntervalNotification
+                                                          object:asset.URL.absoluteString
+                                                        userInfo:userInfo];
+      }
+      
+      if ([self.playerItem respondsToSelector:@selector(setPlayerTime:)]) {
+        if (self.player.currentItem.status == AVPlayerStatusReadyToPlay) {
+          self.playerItem.playerTime = time;
+        }
+      }
+      
+      if (fmodf(round(CMTimeGetSeconds(time)), 10.0f) == 9.0f) {
+        [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerLongTimeIntervalNotification
+                                                          object:self
+                                                        userInfo:userInfo];
+        
+        if (asset) {
+          [NSNotificationCenter.defaultCenter postNotificationName:PRXPlayerLongTimeIntervalNotification
+                                                            object:asset.URL.absoluteString
+                                                          userInfo:userInfo];
+        }
+      }
     }
-  }
 }
 
 - (void)didObserveSoftBoundaryTime {
@@ -1084,6 +1089,8 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       dateAtAudioPlaybackInterruption = nil;
     }
     
+    ignoreTimeObservations = NO;
+
     if ([self.playerItem respondsToSelector:@selector(playerTime)]
     	&& CMTIME_IS_VALID(self.playerItem.playerTime)) {
       [self.player seekToTime:self.playerItem.playerTime completionHandler:^(BOOL finished) {

@@ -70,7 +70,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   if (self) {
     NSKeyValueObservingOptions options = (NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld);
 
-    [self addObserver:self forKeyPath:@"player" options:options context:PRXPlayerAVPlayerContext];
+//    [self addObserver:self forKeyPath:@"player" options:options context:PRXPlayerAVPlayerContext];
     [self addObserver:self forKeyPath:@"playerItem" options:options context:PRXPlayerItemContext];
 
     _reach = [Reachability reachabilityWithHostname:@"www.google.com"];
@@ -103,27 +103,56 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   // If there's an existing player we want to stop observing it
   // before changing to the new one
   @synchronized(_player) {
-    if (self.player) {
-      NSLog(@"Stopping to observe AVPlayer");
-
-      [self.player removeObserver:self forKeyPath:@"currentItem"];
-      [self.player removeObserver:self forKeyPath:@"status"];
-      [self.player removeObserver:self forKeyPath:@"rate"];
-      [self.player removeObserver:self forKeyPath:@"error"];
-
-      dispatch_sync(self.class.sharedQueue, ^{
+    dispatch_async(self.class.sharedQueue, ^{
+      if (self.player) {
+        NSLog(@"Stopping to observe AVPlayer");
+        
+        [self.player removeObserver:self forKeyPath:@"currentItem"];
+        [self.player removeObserver:self forKeyPath:@"status"];
+        [self.player removeObserver:self forKeyPath:@"rate"];
+        [self.player removeObserver:self forKeyPath:@"error"];
+        
         if (playerPeriodicTimeObserver) {
           [self.player removeTimeObserver:playerPeriodicTimeObserver];
           playerPeriodicTimeObserver = nil;
         }
-
+        
         if (playerSoftEndBoundaryTimeObserver) {
           [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
           playerSoftEndBoundaryTimeObserver = nil;
         }
+      }
+      
+      dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        _player = player;
+        
+        if (player) {
+          NSKeyValueObservingOptions options = (NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld);
+          
+          [self.player addObserver:self forKeyPath:@"currentItem" options:options context:PRXPlayerAVPlayerCurrentItemContext];
+          
+          [self.player addObserver:self forKeyPath:@"status" options:options context:PRXPlayerAVPlayerStatusContext];
+          [self.player addObserver:self forKeyPath:@"rate" options:options context:PRXPlayerAVPlayerRateContext];
+          [self.player addObserver:self forKeyPath:@"error" options:options context:PRXPlayerAVPlayerRateContext];
+          
+          __block id _self = self;
+          
+          playerPeriodicTimeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(1, 1000) queue:self.class.sharedQueue usingBlock:^(CMTime time) {
+            [_self didObservePeriodicTimeChange:time];
+          }];
+          
+          // when using playerWithPlayerItem: the player will come with an item, and the
+          // current item context wont actually "change"
+          if (self.player.currentItem) {
+            NSLog(@"AVPlayer arrived with a current playerItem; treating it like an observed change");
+            // don't forward the change, because it's not the change of the item
+            [self mediaPlayerCurrentItemDidChange:nil];
+          }
+          
+          [self postGeneralChangeNotification];
+        }
       });
-    }
-    _player = player;
+    });
   }
 }
 
@@ -677,30 +706,34 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       [self.player addObserver:self forKeyPath:@"error" options:options context:PRXPlayerAVPlayerRateContext];
 
       __block id _self = self;
-
-      dispatch_sync(self.class.sharedQueue, ^{
+      
+      dispatch_async(self.class.sharedQueue, ^{
         if (playerSoftEndBoundaryTimeObserver) {
           [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
           playerSoftEndBoundaryTimeObserver = nil;
         }
-
+        
         if (playerPeriodicTimeObserver) {
           [self.player removeTimeObserver:playerPeriodicTimeObserver];
           playerPeriodicTimeObserver = nil;
         }
+        
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+          playerPeriodicTimeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(1, 1000) queue:self.class.sharedQueue usingBlock:^(CMTime time) {
+            [_self didObservePeriodicTimeChange:time];
+          }];
+          
+          // when using playerWithPlayerItem: the player will come with an item, and the
+          // current item context wont actually "change"
+          if (self.player.currentItem) {
+            NSLog(@"AVPlayer arrived with a current playerItem; treating it like an observed change");
+            // don't forward the change, because it's not the change of the item
+            [self mediaPlayerCurrentItemDidChange:nil];
+          }
+          
+          [self postGeneralChangeNotification];
+        });
       });
-
-      playerPeriodicTimeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(1, 1000) queue:self.class.sharedQueue usingBlock:^(CMTime time) {
-        [_self didObservePeriodicTimeChange:time];
-      }];
-    }
-
-    // when using playerWithPlayerItem: the player will come with an item, and the
-    // current item context wont actually "change"
-    if (self.player.currentItem) {
-      NSLog(@"AVPlayer arrived with a current playerItem; treating it like an observed change");
-      // don't forward the change, because it's not the change of the item
-      [self mediaPlayerCurrentItemDidChange:nil];
     }
   }
 
@@ -827,22 +860,24 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 
     __block id _self = self;
 
-    if (playerSoftEndBoundaryTimeObserver) {
-      dispatch_sync(self.class.sharedQueue, ^{
+    dispatch_async(self.class.sharedQueue, ^{
+      if (playerSoftEndBoundaryTimeObserver) {
         [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
         playerSoftEndBoundaryTimeObserver = nil;
+      }
+      
+      dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSLog(@"Adding soft end boundary observer: %@s (%f)", @(CMTimeGetSeconds(boundary)), progress);
+        playerSoftEndBoundaryTimeObserver = [self.player addBoundaryTimeObserverForTimes:@[ _boundary ]
+                                                                                   queue:self.class.sharedQueue
+                                                                              usingBlock:^{
+                                                                                [_self didObserveSoftBoundaryTime];
+                                                                              }];
+
+        [self bar];
       });
-    }
-
-    NSLog(@"Adding soft end boundary observer: %@s (%f)", @(CMTimeGetSeconds(boundary)), progress);
-    playerSoftEndBoundaryTimeObserver = [self.player addBoundaryTimeObserverForTimes:@[ _boundary ]
-                                                                               queue:self.class.sharedQueue
-                                                                          usingBlock:^{
-                                                                            [_self didObserveSoftBoundaryTime];
-                                                                          }];
+    });
   }
-
-  [self bar];
 }
 
 - (void)mediaPlayerCurrentItemFailedToBecomeReadyToPlay {

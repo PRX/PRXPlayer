@@ -46,17 +46,18 @@ typedef NS_ENUM(NSUInteger, PRXPlayerState) {
 
 @interface PRXPlayer : UIResponder {
   BOOL holdPlayback;
-  
+
   NSUInteger retryCount;
-  
+
+  id playerPlaybackStartBoundaryTimeObserver;
   id playerPeriodicTimeObserver;
   id playerSoftEndBoundaryTimeObserver;
-  
+
   BOOL ignoreTimeObservations;
 
   NSUInteger backgroundKeepAliveTaskID;
   NSDate *dateAtAudioPlaybackInterruption;
-  
+
   NetworkStatus previousReachabilityStatus;
   NSString *previousReachabilityString;
 }

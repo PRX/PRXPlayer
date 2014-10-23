@@ -1164,14 +1164,17 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       if (CMTIME_IS_VALID(duration)) {
         // Boundary needs to be after playhead
         
-        CMTime time = self.playerItem.playerTime;
+        CMTime time = kCMTimeZero;
+        if ([self.playerItem respondsToSelector:@selector(playerTime)]) {
+          time = self.playerItem.playerTime;
         
-        if (CMTimeCompare(time, kCMTimeZero) == 0
-            || CMTIME_IS_INVALID(time)
-            || CMTIME_IS_INDEFINITE(time)
-            || CMTIME_IS_NEGATIVE_INFINITY(time)
-            || CMTIME_IS_POSITIVE_INFINITY(time)) {
-          time = kCMTimeZero;
+          if (CMTimeCompare(time, kCMTimeZero) == 0
+              || CMTIME_IS_INVALID(time)
+              || CMTIME_IS_INDEFINITE(time)
+              || CMTIME_IS_NEGATIVE_INFINITY(time)
+              || CMTIME_IS_POSITIVE_INFINITY(time)) {
+            time = kCMTimeZero;
+          }
         }
         
         CMTime boundaryTimePadding = CMTimeMake(1, 3);

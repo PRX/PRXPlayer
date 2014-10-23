@@ -112,6 +112,11 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
         [self.player removeObserver:self forKeyPath:@"rate"];
         [self.player removeObserver:self forKeyPath:@"error"];
         
+        if (self.player.currentItem) {
+          [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+          [self.player.currentItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
+        }
+        
         if (playerPeriodicTimeObserver) {
           [self.player removeTimeObserver:playerPeriodicTimeObserver];
           playerPeriodicTimeObserver = nil;
@@ -129,6 +134,9 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       }
       
       dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        // Ensure that all time observer messages in flight have cleared the queue:
+        dispatch_sync(self.class.sharedQueue, ^{});
+        
         _player = player;
         
         if (player) {
@@ -174,8 +182,8 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   // Setting the playerItem to nil is the same as calling stop,
   // everything should get dumped;
   if (!playerItem && self.player) {
+  NSLog(@"Tearing down existing AVPlayer");
     [self.player replaceCurrentItemWithPlayerItem:nil];
-    NSLog(@"Tearing down existing AVPlayer");
     self.player = nil;
   }
 }
@@ -528,7 +536,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 
           // Using replaceCurrentItemWithPlayerItem: was problematic
           // but may be more better if the issues are fixed
-          NSLog(@"Setting up a new new AVPlayer");
+          NSLog(@"Setting up a new AVPlayer");
           self.player = [AVPlayer playerWithPlayerItem:playerItem];
         });
       } else {
@@ -1156,14 +1164,17 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       if (CMTIME_IS_VALID(duration)) {
         // Boundary needs to be after playhead
         
-        CMTime time = self.playerItem.playerTime;
+        CMTime time = kCMTimeZero;
+        if ([self.playerItem respondsToSelector:@selector(playerTime)]) {
+          time = self.playerItem.playerTime;
         
-        if (CMTimeCompare(time, kCMTimeZero) == 0
-            || CMTIME_IS_INVALID(time)
-            || CMTIME_IS_INDEFINITE(time)
-            || CMTIME_IS_NEGATIVE_INFINITY(time)
-            || CMTIME_IS_POSITIVE_INFINITY(time)) {
-          time = kCMTimeZero;
+          if (CMTimeCompare(time, kCMTimeZero) == 0
+              || CMTIME_IS_INVALID(time)
+              || CMTIME_IS_INDEFINITE(time)
+              || CMTIME_IS_NEGATIVE_INFINITY(time)
+              || CMTIME_IS_POSITIVE_INFINITY(time)) {
+            time = kCMTimeZero;
+          }
         }
         
         CMTime boundaryTimePadding = CMTimeMake(1, 3);

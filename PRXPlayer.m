@@ -134,6 +134,9 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       }
       
       dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        // Ensure that all time observer messages in flight have cleared the queue:
+        dispatch_sync(self.class.sharedQueue, ^{});
+        
         _player = player;
         
         if (player) {

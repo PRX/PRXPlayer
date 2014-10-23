@@ -112,6 +112,11 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
         [self.player removeObserver:self forKeyPath:@"rate"];
         [self.player removeObserver:self forKeyPath:@"error"];
         
+        if (self.player.currentItem) {
+          [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+          [self.player.currentItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
+        }
+        
         if (playerPeriodicTimeObserver) {
           [self.player removeTimeObserver:playerPeriodicTimeObserver];
           playerPeriodicTimeObserver = nil;

@@ -182,8 +182,8 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   // Setting the playerItem to nil is the same as calling stop,
   // everything should get dumped;
   if (!playerItem && self.player) {
+  NSLog(@"Tearing down existing AVPlayer");
     [self.player replaceCurrentItemWithPlayerItem:nil];
-    NSLog(@"Tearing down existing AVPlayer");
     self.player = nil;
   }
 }
@@ -536,7 +536,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 
           // Using replaceCurrentItemWithPlayerItem: was problematic
           // but may be more better if the issues are fixed
-          NSLog(@"Setting up a new new AVPlayer");
+          NSLog(@"Setting up a new AVPlayer");
           self.player = [AVPlayer playerWithPlayerItem:playerItem];
         });
       } else {

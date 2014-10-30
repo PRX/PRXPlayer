@@ -57,7 +57,6 @@ static const char *periodicTimeObserverQueueLabel = "PRXPlayerPeriodicTimeObserv
 }
 
 static void * const PRXPlayerItemContext = (void*)&PRXPlayerItemContext;
-static void * const PRXPlayerAVPlayerContext = (void*)&PRXPlayerAVPlayerContext;
 static void * const PRXPlayerAVPlayerStatusContext = (void*)&PRXPlayerAVPlayerStatusContext;
 static void * const PRXPlayerAVPlayerRateContext = (void*)&PRXPlayerAVPlayerRateContext;
 static void * const PRXPlayerAVPlayerErrorContext = (void*)&PRXPlayerAVPlayerErrorContext;
@@ -70,7 +69,6 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   if (self) {
     NSKeyValueObservingOptions options = (NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld);
 
-//    [self addObserver:self forKeyPath:@"player" options:options context:PRXPlayerAVPlayerContext];
     [self addObserver:self forKeyPath:@"playerItem" options:options context:PRXPlayerItemContext];
 
     _reach = [Reachability reachabilityWithHostname:@"www.google.com"];
@@ -560,11 +558,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 #pragma mark - Routing observations
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
-  if (context == &PRXPlayerAVPlayerContext) {
-    NSLog(@"Observed AVPlayer change");
-    [self mediaPlayerDidChange:change];
-    return;
-  } else if (context == &PRXPlayerItemContext) {
+  if (context == &PRXPlayerItemContext) {
     NSLog(@"Observed PRXPlayerItem change");
     [self playerItemDidChange:change];
     return;
@@ -703,59 +697,6 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       }
     }
   }
-}
-
-- (void)mediaPlayerDidChange:(NSDictionary *)change {
-  NSUInteger valueChangeKind = [change[NSKeyValueChangeKindKey] integerValue];
-
-  id new = change[NSKeyValueChangeNewKey];
-
-  // Unless the situation changes, we only care about times when the AVPlayer gets set to a valid player
-  if (valueChangeKind == NSKeyValueChangeSetting && [new isKindOfClass:AVPlayer.class]) {
-    NSLog(@"Starting to observe AVPlayer");
-
-    @synchronized(self.player) {
-      NSKeyValueObservingOptions options = (NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld);
-
-      [self.player addObserver:self forKeyPath:@"currentItem" options:options context:PRXPlayerAVPlayerCurrentItemContext];
-
-      [self.player addObserver:self forKeyPath:@"status" options:options context:PRXPlayerAVPlayerStatusContext];
-      [self.player addObserver:self forKeyPath:@"rate" options:options context:PRXPlayerAVPlayerRateContext];
-      [self.player addObserver:self forKeyPath:@"error" options:options context:PRXPlayerAVPlayerRateContext];
-
-      __block id _self = self;
-      
-      dispatch_async(self.class.sharedQueue, ^{
-        if (playerSoftEndBoundaryTimeObserver) {
-          [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
-          playerSoftEndBoundaryTimeObserver = nil;
-        }
-        
-        if (playerPeriodicTimeObserver) {
-          [self.player removeTimeObserver:playerPeriodicTimeObserver];
-          playerPeriodicTimeObserver = nil;
-        }
-        
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-          playerPeriodicTimeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(1, 1000) queue:self.class.sharedQueue usingBlock:^(CMTime time) {
-            [_self didObservePeriodicTimeChange:time];
-          }];
-          
-          // when using playerWithPlayerItem: the player will come with an item, and the
-          // current item context wont actually "change"
-          if (self.player.currentItem) {
-            NSLog(@"AVPlayer arrived with a current playerItem; treating it like an observed change");
-            // don't forward the change, because it's not the change of the item
-            [self mediaPlayerCurrentItemDidChange:nil];
-          }
-          
-          [self postGeneralChangeNotification];
-        });
-      });
-    }
-  }
-
-  [self postGeneralChangeNotification];
 }
 
 - (void)mediaPlayerRateDidChange:(NSDictionary *)change {

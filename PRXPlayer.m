@@ -154,10 +154,13 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
           
           // when using playerWithPlayerItem: the player will come with an item, and the
           // current item context wont actually "change"
-          if (self.player.currentItem) {
+          AVPlayerItem *currentItem = self.player.currentItem;
+          if (currentItem) {
             NSLog(@"AVPlayer arrived with a current playerItem; treating it like an observed change");
-            // don't forward the change, because it's not the change of the item
-            [self mediaPlayerCurrentItemDidChange:nil];
+            // construct a dummy change dict to pass along
+            NSDictionary *change = @{ NSKeyValueChangeKindKey : @(NSKeyValueChangeSetting),
+                                      NSKeyValueChangeNewKey : currentItem };
+            [self mediaPlayerCurrentItemDidChange:change];
           }
           
           [self postGeneralChangeNotification];
@@ -731,41 +734,52 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 }
 
 - (void)mediaPlayerCurrentItemDidChange:(NSDictionary *)change {
-  // will not get a change when called indirectly after a AVPlayer change
+  NSUInteger valueChangeKind = [change[NSKeyValueChangeKindKey] integerValue];
 
-  AVPlayerItem *playerItem = self.player.currentItem;
+  if (valueChangeKind == NSKeyValueChangeSetting) {
+    AVPlayerItem *oldItem = change[NSKeyValueChangeOldKey];
+    AVPlayerItem *newItem = change[NSKeyValueChangeNewKey];
+    NSLog(@"oldItem: %@, newItem: %@", oldItem, newItem);
 
-  if (playerItem) {
-    NSLog(@"Starting to observe AVPlayer's currentItem");
+    if (![oldItem isEqual:[NSNull null]]) {
+      NSLog(@"Unregistering observers from AVPlayer's old playerItem");
 
-    NSKeyValueObservingOptions options = (NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld);
+      [oldItem removeObserver:self forKeyPath:@"status"];
+      [oldItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
 
-    [playerItem addObserver:self forKeyPath:@"status" options:options context:PRXPlayerAVPlayerCurrentItemStatusContext];
-    [playerItem addObserver:self forKeyPath:@"playbackBufferEmpty" options:options context:PRXPlayerAVPlayerCurrentItemBufferEmptyContext];
+      [NSNotificationCenter.defaultCenter removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+      [NSNotificationCenter.defaultCenter removeObserver:self name:AVPlayerItemTimeJumpedNotification object:nil];
+    }
 
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemTimeJumpedNotification object:nil];
+    if (![newItem isEqual:[NSNull null]]) {
+      NSLog(@"Starting to observe AVPlayer's new playerItem: %@", newItem);
 
-    [[NSNotificationCenter defaultCenter] addObserver:self
+      NSKeyValueObservingOptions options = (NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld);
+
+      [newItem addObserver:self forKeyPath:@"status" options:options context:PRXPlayerAVPlayerCurrentItemStatusContext];
+      [newItem addObserver:self forKeyPath:@"playbackBufferEmpty" options:options context:PRXPlayerAVPlayerCurrentItemBufferEmptyContext];
+
+      [NSNotificationCenter.defaultCenter addObserver:self
                                              selector:@selector(mediaPlayerCurrentItemDidPlayToEndTime:)
                                                  name:AVPlayerItemDidPlayToEndTimeNotification
-                                               object:playerItem];
+                                               object:newItem];
 
-    [[NSNotificationCenter defaultCenter] addObserver:self
+      [NSNotificationCenter.defaultCenter addObserver:self
                                              selector:@selector(mediaPlayerCurrentItemDidJumpTime:)
                                                  name:AVPlayerItemTimeJumpedNotification
-                                               object:playerItem];
+                                               object:newItem];
 
-    // Sometimes I think this change doesn't get observed until after
-    // after the status has already changed, so we need to invoke some
-    // handlers manually
-    if (playerItem.status != AVPlayerStatusUnknown) {
-      NSLog(@"Newly set AVPlayerItem arrived with a meaningful status; handling appropriately");
+      // Sometimes I think this change doesn't get observed until after
+      // after the status has already changed, so we need to invoke some
+      // handlers manually
+      if (newItem.status != AVPlayerStatusUnknown) {
+        NSLog(@"Newly set AVPlayerItem arrived with a meaningful status; handling appropriately");
 
-      if (playerItem.status == AVPlayerStatusReadyToPlay) {
-        [self mediaPlayerCurrentItemDidBecomeReadyToPlay];
-      } else if (playerItem.status == AVPlayerStatusFailed) {
-        [self mediaPlayerCurrentItemFailedToBecomeReadyToPlay];
+        if (newItem.status == AVPlayerStatusReadyToPlay) {
+          [self mediaPlayerCurrentItemDidBecomeReadyToPlay];
+        } else if (newItem.status == AVPlayerStatusFailed) {
+          [self mediaPlayerCurrentItemFailedToBecomeReadyToPlay];
+        }
       }
     }
   }

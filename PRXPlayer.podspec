@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name         = "PRXPlayer"
-  s.version      = "2.0.15"
+  s.version      = "2.0.16"
   s.summary      = "An iOS audio player"
 
   s.description  = <<-DESC
@@ -17,7 +17,7 @@ Pod::Spec.new do |s|
 
   s.platform     = :ios, '7.0'
 
-  s.source       = { :git => "https://github.com/PRX/PRXPlayer.git", :tag => "2.0.15" }
+  s.source       = { :git => "https://github.com/PRX/PRXPlayer.git", :tag => "2.0.16" }
   s.source_files = '**/*.{h,m}'
   s.requires_arc = true
 

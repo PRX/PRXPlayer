@@ -56,7 +56,6 @@ static const char *periodicTimeObserverQueueLabel = "PRXPlayerPeriodicTimeObserv
   return sharedQueue;
 }
 
-static void * const PRXPlayerItemContext = (void*)&PRXPlayerItemContext;
 static void * const PRXPlayerAVPlayerStatusContext = (void*)&PRXPlayerAVPlayerStatusContext;
 static void * const PRXPlayerAVPlayerRateContext = (void*)&PRXPlayerAVPlayerRateContext;
 static void * const PRXPlayerAVPlayerErrorContext = (void*)&PRXPlayerAVPlayerErrorContext;
@@ -68,8 +67,6 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   self = [super init];
   if (self) {
     NSKeyValueObservingOptions options = (NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld);
-
-    [self addObserver:self forKeyPath:@"playerItem" options:options context:PRXPlayerItemContext];
 
     _reach = [Reachability reachabilityWithHostname:@"www.google.com"];
     previousReachabilityStatus = -1;
@@ -171,22 +168,109 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 }
 
 - (void)setPlayerItem:(id<PRXPlayerItem>)playerItem {
+  NSLog(@"PRXPlayerItem was set");
+  ignoreTimeObservations = YES;
+  
   // If setting to anything other than current PlayerItem
   // now is a good time to silence any existing playback
   if (![playerItem isEqualToPlayerItem:self.playerItem]) {
     self.player.rate = 0.0f;
   }
 
-  ignoreTimeObservations = YES;
-  _playerItem = playerItem;
-
   // Setting the playerItem to nil is the same as calling stop,
   // everything should get dumped;
-  if (!playerItem && self.player) {
-  NSLog(@"Tearing down existing AVPlayer");
-    [self.player replaceCurrentItemWithPlayerItem:nil];
-    self.player = nil;
+  if (!playerItem) {
+    if (self.player) {
+      NSLog(@"Tearing down existing AVPlayer");
+      [self.player replaceCurrentItemWithPlayerItem:nil];
+      self.player = nil;
+    }
+  } else {
+    AVAsset *playerItemAsset = playerItem.playerAsset;
+    
+    // most prxplayer properties can/should be reset somewhere in here
+    //    dateAtAudioPlaybackInterruption = nil; //this really can't happen here
+    
+    //
+    // Nothing can happen after these checks; most call async methods
+    // and we need to wait for the results
+    //
+    
+    // If there was no previous valid PlayerItem, we can always load the new one
+    if (![_playerItem conformsToProtocol:@protocol(PRXPlayerItem)]) {
+      NSLog(@"No previous player item was set; no reason not to load tracks for new one");
+      [self loadTracksForAsset:playerItemAsset];
+    } else if (![playerItemAsset isKindOfClass:AVURLAsset.class]) {
+      NSLog(@"New asset isn't a URL asset, so we can't make any checks; just load the tracks");
+      [self loadTracksForAsset:playerItemAsset];
+    } else {
+      AVURLAsset *newURLAsset = (AVURLAsset *)playerItemAsset;
+      
+      //
+      // Knowing the new PlayerItem asset is a URL asset lets us be smart
+      // about some specific situations
+      //
+      
+      // if the new and old items are the same, we're probably dealing with a case
+      // where the PlayerItem's asset resource changed from local to remote.
+      // Since old and new are the same, checking for a change in that object's
+      // asset would always be false, so we should check against the asset
+      // actually loaded into the player
+      // (this only can be checked if the current asset is a URL asset)
+      if ([_playerItem isEqualToPlayerItem:playerItem]
+          && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]) {
+        AVURLAsset *currentAsset = (AVURLAsset *)self.player.currentItem.asset;
+        
+        if (![currentAsset.URL isEqual:newURLAsset.URL]) {
+          NSLog(@"New PlayerItem matches currentPlayer item, but URLs differ. Resource likely changed; loading tracks");
+          // This will not seemlessly transition between resources unless you are maintaning
+          // position state on the PRXPlayerItem, which will be used after the tracks load.
+          // Otherwise each transition will restart from the beginning.
+          [self loadTracksForAsset:playerItemAsset];
+        } else {
+          // Old and new PlayerItem were equal, and the new item's asset
+          // matches the currently loaded asset,
+          // just make sure it's playing/holding as requested
+          NSLog(@"New PlayerItem matches current PlayerItem exactly. No reason to load, just deal with playback");
+          [self bar];
+        }
+      } else if ([_playerItem.playerAsset isKindOfClass:AVURLAsset.class]) {
+        AVURLAsset *oldURLAsset = (AVURLAsset *)_playerItem.playerAsset;
+        
+        // If the new and old PlayerItems are not the same, but their
+        // asset URLs are, we can't assume it's a remote/local switchover,
+        // and there's no need to reload the already loaded tracks, so
+        // just make sure it's playing/holding as requested
+        if ([oldURLAsset.URL isEqual:newURLAsset.URL]) {
+          NSLog(@"PlayerItem changed, but asset resource (URL) did not. No reason to load, just deal with playback");
+          [self bar];
+        } else {
+          NSLog(@"PlayerItems and Asset URLs have changed; load tracks for new PlayerItem");
+          [self loadTracksForAsset:playerItemAsset];
+        }
+      } else {
+        // PlayerItem changed but old item's asset isn't a URL asset, so we
+        // can't make any good checks; just load the tracks
+        NSLog(@"Couldn't compare new PlayerItem with old asset, so load its tracks");
+        [self loadTracksForAsset:playerItemAsset];
+      }
+    }
   }
+  
+  NSDictionary *change = @{ NSKeyValueChangeKindKey : @(NSKeyValueChangeSetting),
+                            NSKeyValueChangeOldKey : _playerItem ? (id)_playerItem : [NSNull null],
+                            NSKeyValueChangeNewKey : playerItem ? (id)playerItem : [NSNull null]};
+ 
+  _playerItem = playerItem;
+ 
+  // Send a change notification to our delegate:
+  if ([self.delegate respondsToSelector:@selector(player:playerItemDidChange:)]) {
+    [self.delegate player:self playerItemDidChange:change];
+  }
+  
+  [self postGeneralChangeNotification];
+  
+  return;
 }
 
 #pragma mark - Properties
@@ -528,7 +612,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
             AVURLAsset *itemURLAsset = (AVURLAsset *)self.playerItemAsset;
 
             if (![urlAsset.URL.absoluteString isEqualToString:itemURLAsset.URL.absoluteString]) {
-              NSLog(@"PlayerItem asset no longer matches this asset, so the loaded tracks are being ignored");
+              NSLog(@"PlayerItem asset (%@) no longer matches this asset (%@), so the loaded tracks are being ignored", urlAsset.URL.absoluteString, itemURLAsset.URL.absoluteString);
               return;
             }
           }
@@ -561,11 +645,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 #pragma mark - Routing observations
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
-  if (context == &PRXPlayerItemContext) {
-    NSLog(@"Observed PRXPlayerItem change");
-    [self playerItemDidChange:change];
-    return;
-  } else if (context == &PRXPlayerAVPlayerCurrentItemContext) {
+  if (context == &PRXPlayerAVPlayerCurrentItemContext) {
     NSLog(@"Observed AVPlayer currentItem change");
     [self mediaPlayerCurrentItemDidChange:change];
     return;
@@ -599,108 +679,6 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 }
 
 #pragma mark - Responding to observations
-
-- (void)playerItemDidChange:(NSDictionary *)change {
-  NSUInteger valueChangeKind = [change[NSKeyValueChangeKindKey] integerValue];
-  id newValue = change[NSKeyValueChangeNewKey];
-  id oldValue = change[NSKeyValueChangeOldKey];
-
-  if ([self.delegate respondsToSelector:@selector(player:playerItemDidChange:)]) {
-    [self.delegate player:self playerItemDidChange:change];
-  }
-
-  [self postGeneralChangeNotification];
-
-  if (valueChangeKind == NSKeyValueChangeSetting && [newValue conformsToProtocol:@protocol(PRXPlayerItem)]) {
-    NSLog(@"PRXPlayerItem was set");
-
-    id<PRXPlayerItem> newPlayerItem = newValue;
-
-    // most prxplayer properties can/should be reset somewhere in here
-    //    dateAtAudioPlaybackInterruption = nil; //this really can't happen here
-
-    //
-    // Nothing can happen after these checks; most call async methods
-    // and we need to wait for the results
-    //
-
-    // If there was no previous valid PlayerItem, we can always load the new one
-    BOOL previousPlayerItemDidNotConformToProtocol = ![oldValue conformsToProtocol:@protocol(PRXPlayerItem)];
-
-    ignoreTimeObservations = YES;
-    
-    if (previousPlayerItemDidNotConformToProtocol) {
-      NSLog(@"No previous player item was set; no reason not to load tracks for new one");
-      [self loadTracksForAsset:self.playerItemAsset];
-      return;
-    } else {
-      BOOL newPlayerItemHasNoURLAssetForComparison = ![newPlayerItem.playerAsset isKindOfClass:AVURLAsset.class];
-
-      if (newPlayerItemHasNoURLAssetForComparison) {
-        NSLog(@"New asset isn't a URL asset, so we can't make any checks; just load the tracks");
-        [self loadTracksForAsset:self.playerItemAsset];
-        return;
-      } else {
-        id<PRXPlayerItem> oldPlayerItem = oldValue;
-        AVURLAsset *newURLAsset = (AVURLAsset *)newPlayerItem.playerAsset;
-
-        //
-        // Knowing the new PlayerItem asset is a URL asset lets us be smart
-        // about some specific situations
-        //
-
-        // if the new and old items are the same, we're probably dealing with a case
-        // where the PlayerItem's asset resource changed from local to remote.
-        // Since old and new are the same, checking for a change in that object's
-        // asset would always be false, so we should check against the asset
-        // actually loaded into the player
-        // (this only can be checked if the current asset is a URL asset)
-        if ([oldPlayerItem isEqualToPlayerItem:newPlayerItem]
-            && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]) {
-          AVURLAsset *currentAsset = (AVURLAsset *)self.player.currentItem.asset;
-
-          if (![currentAsset.URL isEqual:newURLAsset.URL]) {
-            NSLog(@"New PlayerItem matches currentPlayer item, but URLs differ. Resource likely changed; loading tracks");
-            // This will not seemlessly transition between resources unless you are maintaning
-            // position state on the PRXPlayerItem, which will be used after the tracks load.
-            // Otherwise each transition will restart from the beginning.
-            [self loadTracksForAsset:self.playerItemAsset];
-            return;
-          } else {
-            // Old and new PlayerItem were equal, and the new item's asset
-            // matches the currently loaded asset,
-            // just make sure it's playing/holding as requested
-            NSLog(@"New PlayerItem matches current PlayerItem exactly. No reason to load, just deal with playback");
-            [self bar];
-            return;
-          }
-        } else if ([oldPlayerItem.playerAsset isKindOfClass:AVURLAsset.class]) {
-          AVURLAsset *oldURLAsset = (AVURLAsset *)oldPlayerItem.playerAsset;
-
-          // If the new and old PlayerItems are not the same, but their
-          // asset URLs are, we can't assume it's a remote/local switchover,
-          // and there's no need to reload the already loaded tracks, so
-          // just make sure it's playing/holding as requested
-          if ([oldURLAsset.URL isEqual:newURLAsset.URL]) {
-            NSLog(@"PlayerItem changed, but asset resource (URL) did not. No reason to load, just deal with playback");
-            [self bar];
-            return;
-          } else {
-            NSLog(@"PlayerItems and Asset URLs have changed; load tracks for new PlayerItem");
-            [self loadTracksForAsset:self.playerItemAsset];
-            return;
-          }
-        } else {
-          // PlayerItem changed but old item's asset isn't a URL asset, so we
-          // can't make any good checks; just load the tracks
-          NSLog(@"Couldn't compare new PlayerItem with old asset, so load its tracks");
-          [self loadTracksForAsset:self.playerItemAsset];
-          return;
-        }
-      }
-    }
-  }
-}
 
 - (void)mediaPlayerRateDidChange:(NSDictionary *)change {
   if ([change[NSKeyValueChangeNewKey] isKindOfClass:NSClassFromString(@"NSError")]) { return; }
@@ -1043,7 +1021,6 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       [self playPlayerItem:playerItem];
     }
 
-    return;
   } else { // try to cancel
 
     if ((self.state == PRXPlayerStateLoading ||
@@ -1059,21 +1036,8 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       [self playPlayerItem:playerItem];
     }
 
-    return;
   }
-
-  if (cancel && (self.state == PRXPlayerStateLoading ||
-                 self.state == PRXPlayerStateBuffering ||
-                 self.state == PRXPlayerStateWaiting)) {
-    [self pause];
-  } else if ([playerItemAsset isKindOfClass:AVURLAsset.class]
-      && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]
-      && [((AVURLAsset *)self.player.currentItem.asset).URL isEqual:((AVURLAsset *)playerItemAsset).URL]
-      && self.player.rate != 0.0f) {
-    [self pause];
-  } else {
-    [self playPlayerItem:playerItem];
-  }
+  return;
 }
 
 - (void)togglePlayerItem:(id<PRXPlayerItem>)playerItem {

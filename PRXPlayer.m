@@ -825,10 +825,10 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
                                                                                 [_self didObserveSoftBoundaryTime];
                                                                               }];
 
-        [self bar];
       });
     });
   }
+  [self bar];
 }
 
 - (void)mediaPlayerCurrentItemFailedToBecomeReadyToPlay {

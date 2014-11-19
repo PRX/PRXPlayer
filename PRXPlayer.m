@@ -177,6 +177,20 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
     self.player.rate = 0.0f;
   }
 
+  // Update playerItem but keep previous item around for conditionals below
+  id<PRXPlayerItem> oldPlayerItem = _playerItem;
+  _playerItem = playerItem;
+
+  // Send a change notification to our delegate:
+  if ([self.delegate respondsToSelector:@selector(player:playerItemDidChange:)]) {
+    NSDictionary *change = @{ NSKeyValueChangeKindKey : @(NSKeyValueChangeSetting),
+                              NSKeyValueChangeOldKey : oldPlayerItem ? (id)oldPlayerItem : [NSNull null],
+                              NSKeyValueChangeNewKey : playerItem ? (id)playerItem : [NSNull null]};
+    [self.delegate player:self playerItemDidChange:change];
+  }
+
+  [self postGeneralChangeNotification];
+
   // Setting the playerItem to nil is the same as calling stop,
   // everything should get dumped;
   if (!playerItem) {
@@ -186,7 +200,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       self.player = nil;
     }
   } else {
-    AVAsset *playerItemAsset = playerItem.playerAsset;
+    AVAsset *playerItemAsset = self.playerItemAsset;
     
     // most prxplayer properties can/should be reset somewhere in here
     //    dateAtAudioPlaybackInterruption = nil; //this really can't happen here
@@ -197,7 +211,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
     //
     
     // If there was no previous valid PlayerItem, we can always load the new one
-    if (![_playerItem conformsToProtocol:@protocol(PRXPlayerItem)]) {
+    if (![oldPlayerItem conformsToProtocol:@protocol(PRXPlayerItem)]) {
       NSLog(@"No previous player item was set; no reason not to load tracks for new one");
       [self loadTracksForAsset:playerItemAsset];
     } else if (![playerItemAsset isKindOfClass:AVURLAsset.class]) {
@@ -217,7 +231,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       // asset would always be false, so we should check against the asset
       // actually loaded into the player
       // (this only can be checked if the current asset is a URL asset)
-      if ([_playerItem isEqualToPlayerItem:playerItem]
+      if ([oldPlayerItem isEqualToPlayerItem:playerItem]
           && [self.player.currentItem.asset isKindOfClass:AVURLAsset.class]) {
         AVURLAsset *currentAsset = (AVURLAsset *)self.player.currentItem.asset;
         
@@ -234,8 +248,8 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
           NSLog(@"New PlayerItem matches current PlayerItem exactly. No reason to load, just deal with playback");
           [self bar];
         }
-      } else if ([_playerItem.playerAsset isKindOfClass:AVURLAsset.class]) {
-        AVURLAsset *oldURLAsset = (AVURLAsset *)_playerItem.playerAsset;
+      } else if ([oldPlayerItem.playerAsset isKindOfClass:AVURLAsset.class]) {
+        AVURLAsset *oldURLAsset = (AVURLAsset *)oldPlayerItem.playerAsset;
         
         // If the new and old PlayerItems are not the same, but their
         // asset URLs are, we can't assume it's a remote/local switchover,
@@ -256,19 +270,6 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       }
     }
   }
-  
-  NSDictionary *change = @{ NSKeyValueChangeKindKey : @(NSKeyValueChangeSetting),
-                            NSKeyValueChangeOldKey : _playerItem ? (id)_playerItem : [NSNull null],
-                            NSKeyValueChangeNewKey : playerItem ? (id)playerItem : [NSNull null]};
- 
-  _playerItem = playerItem;
- 
-  // Send a change notification to our delegate:
-  if ([self.delegate respondsToSelector:@selector(player:playerItemDidChange:)]) {
-    [self.delegate player:self playerItemDidChange:change];
-  }
-  
-  [self postGeneralChangeNotification];
   
   return;
 }

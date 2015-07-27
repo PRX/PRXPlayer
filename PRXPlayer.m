@@ -31,6 +31,7 @@ NSString * const PRXPlayerLongTimeIntervalNotification = @"PRXPlayerLongTimeInte
 NSString * const PRXPlayerReachabilityPolicyPreventedPlayback = @"PRXPlayerReachabilityPolicyPreventedPlayback";
 
 static const char *periodicTimeObserverQueueLabel = "PRXPlayerPeriodicTimeObserverQueueLabel";
+static const char *playerAssignmentQueueLabel = "PRXPlayerAVPlayerAssignmentQueueLabel";
 
 @implementation PRXPlayer
 
@@ -45,15 +46,26 @@ static const char *periodicTimeObserverQueueLabel = "PRXPlayerPeriodicTimeObserv
   return _instance;
 }
 
-+ (dispatch_queue_t)sharedQueue {
-  static dispatch_queue_t sharedQueue;
++ (dispatch_queue_t)sharedObserverQueue {
+  static dispatch_queue_t sharedObserverQueue;
   static dispatch_once_t onceToken;
 
   dispatch_once(&onceToken, ^{
-    sharedQueue = dispatch_queue_create(periodicTimeObserverQueueLabel, DISPATCH_QUEUE_SERIAL);
+    sharedObserverQueue = dispatch_queue_create(periodicTimeObserverQueueLabel, DISPATCH_QUEUE_SERIAL);
   });
 
-  return sharedQueue;
+  return sharedObserverQueue;
+}
+
++ (dispatch_queue_t)sharedAssignmentQueue {
+  static dispatch_queue_t sharedAssignmentQueue;
+  static dispatch_once_t onceToken;
+
+  dispatch_once(&onceToken, ^{
+    sharedAssignmentQueue = dispatch_queue_create(playerAssignmentQueueLabel, DISPATCH_QUEUE_SERIAL);
+  });
+
+  return sharedAssignmentQueue;
 }
 
 static void * const PRXPlayerAVPlayerStatusContext = (void*)&PRXPlayerAVPlayerStatusContext;
@@ -66,8 +78,6 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 - (id)init {
   self = [super init];
   if (self) {
-    NSKeyValueObservingOptions options = (NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld);
-
     _reach = [Reachability reachabilityWithHostname:@"www.google.com"];
     previousReachabilityStatus = -1;
     [self.reach startNotifier];
@@ -95,76 +105,77 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 }
 
 - (void)setPlayer:(AVPlayer *)player {
-  // If there's an existing player we want to stop observing it
-  // before changing to the new one
-  @synchronized(_player) {
-    dispatch_async(self.class.sharedQueue, ^{
-      if (self.player) {
-        NSLog(@"Stopping to observe AVPlayer");
-        
-        [self.player removeObserver:self forKeyPath:@"currentItem"];
-        [self.player removeObserver:self forKeyPath:@"status"];
-        [self.player removeObserver:self forKeyPath:@"rate"];
-        [self.player removeObserver:self forKeyPath:@"error"];
-        
-        if (self.player.currentItem) {
-          [self.player.currentItem removeObserver:self forKeyPath:@"status"];
-          [self.player.currentItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
-        }
-        
-        if (playerPeriodicTimeObserver) {
-          [self.player removeTimeObserver:playerPeriodicTimeObserver];
-          playerPeriodicTimeObserver = nil;
-        }
-        
-        if (playerSoftEndBoundaryTimeObserver) {
-          [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
-          playerSoftEndBoundaryTimeObserver = nil;
-        }
-        
-        if (playerPlaybackStartBoundaryTimeObserver) {
-          [self.player removeTimeObserver:playerPlaybackStartBoundaryTimeObserver];
-          playerPlaybackStartBoundaryTimeObserver = nil;
-        }
+  // Player assignment is serialized on the assignment queue to ensure that
+  // multiple successive assignments do not result in half-initialized observers
+  // or players deallocated before observers have been cleaned up. We need a
+  // separate queue from the one used by the TimeObservers, since after removing
+  // those observers we need to wait on the observer queue to drain before
+  // deallocating the old player.
+  dispatch_async(self.class.sharedAssignmentQueue, ^{
+    if (self.player) {
+      NSLog(@"Stopping to observe AVPlayer");
+
+      [self.player removeObserver:self forKeyPath:@"currentItem"];
+      [self.player removeObserver:self forKeyPath:@"status"];
+      [self.player removeObserver:self forKeyPath:@"rate"];
+      [self.player removeObserver:self forKeyPath:@"error"];
+
+      if (self.player.currentItem) {
+        [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+        [self.player.currentItem removeObserver:self forKeyPath:@"playbackBufferEmpty"];
       }
-      
-      dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        // Ensure that all time observer messages in flight have cleared the queue:
-        dispatch_sync(self.class.sharedQueue, ^{});
-        
-        _player = player;
-        
-        if (player) {
-          NSKeyValueObservingOptions options = (NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld);
-          
-          [self.player addObserver:self forKeyPath:@"currentItem" options:options context:PRXPlayerAVPlayerCurrentItemContext];
-          
-          [self.player addObserver:self forKeyPath:@"status" options:options context:PRXPlayerAVPlayerStatusContext];
-          [self.player addObserver:self forKeyPath:@"rate" options:options context:PRXPlayerAVPlayerRateContext];
-          [self.player addObserver:self forKeyPath:@"error" options:options context:PRXPlayerAVPlayerRateContext];
-          
-          __block id _self = self;
-          
-          playerPeriodicTimeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(1, 1000) queue:self.class.sharedQueue usingBlock:^(CMTime time) {
-            [_self didObservePeriodicTimeChange:time];
-          }];
-          
-          // when using playerWithPlayerItem: the player will come with an item, and the
-          // current item context wont actually "change"
-          AVPlayerItem *currentItem = self.player.currentItem;
-          if (currentItem) {
-            NSLog(@"AVPlayer arrived with a current playerItem; treating it like an observed change");
-            // construct a dummy change dict to pass along
-            NSDictionary *change = @{ NSKeyValueChangeKindKey : @(NSKeyValueChangeSetting),
-                                      NSKeyValueChangeNewKey : currentItem };
-            [self mediaPlayerCurrentItemDidChange:change];
-          }
-          
-          [self postGeneralChangeNotification];
-        }
-      });
-    });
-  }
+
+      if (playerPeriodicTimeObserver) {
+        [self.player removeTimeObserver:playerPeriodicTimeObserver];
+        playerPeriodicTimeObserver = nil;
+      }
+
+      if (playerSoftEndBoundaryTimeObserver) {
+        [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
+        playerSoftEndBoundaryTimeObserver = nil;
+      }
+
+      if (playerPlaybackStartBoundaryTimeObserver) {
+        [self.player removeTimeObserver:playerPlaybackStartBoundaryTimeObserver];
+        playerPlaybackStartBoundaryTimeObserver = nil;
+      }
+    }
+
+    // Ensure that all time observer messages in flight have cleared the queue:
+    dispatch_sync(self.class.sharedObserverQueue, ^{});
+
+    _player = player;
+
+    if (self.player) {
+      NSKeyValueObservingOptions options = (NSKeyValueObservingOptionNew|NSKeyValueObservingOptionOld);
+
+      [self.player addObserver:self forKeyPath:@"currentItem" options:options context:PRXPlayerAVPlayerCurrentItemContext];
+
+      [self.player addObserver:self forKeyPath:@"status" options:options context:PRXPlayerAVPlayerStatusContext];
+      [self.player addObserver:self forKeyPath:@"rate" options:options context:PRXPlayerAVPlayerRateContext];
+      [self.player addObserver:self forKeyPath:@"error" options:options context:PRXPlayerAVPlayerRateContext];
+
+      __block id _self = self;
+
+      playerPeriodicTimeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(1, 1000) queue:self.class.sharedObserverQueue usingBlock:^(CMTime time) {
+        [_self didObservePeriodicTimeChange:time];
+      }];
+
+      // when using playerWithPlayerItem: the player will come with an item, and the
+      // current item context wont actually "change"
+      AVPlayerItem *currentItem = self.player.currentItem;
+      if (currentItem) {
+        NSLog(@"AVPlayer arrived with a current playerItem; treating it like an observed change");
+        // construct a dummy change dict to pass along
+        NSDictionary *change = @{ NSKeyValueChangeKindKey : @(NSKeyValueChangeSetting),
+                                  NSKeyValueChangeNewKey : currentItem };
+        [self mediaPlayerCurrentItemDidChange:change];
+      }
+
+      [self postGeneralChangeNotification];
+    }
+
+  });
 }
 
 - (void)setPlayerItem:(id<PRXPlayerItem>)playerItem {
@@ -812,7 +823,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 
     __block id _self = self;
 
-    dispatch_async(self.class.sharedQueue, ^{
+    dispatch_async(self.class.sharedObserverQueue, ^{
       if (playerSoftEndBoundaryTimeObserver) {
         [self.player removeTimeObserver:playerSoftEndBoundaryTimeObserver];
         playerSoftEndBoundaryTimeObserver = nil;
@@ -821,7 +832,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
       dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSLog(@"Adding soft end boundary observer: %@s (%f)", @(CMTimeGetSeconds(boundary)), progress);
         playerSoftEndBoundaryTimeObserver = [self.player addBoundaryTimeObserverForTimes:@[ _boundary ]
-                                                                                   queue:self.class.sharedQueue
+                                                                                   queue:self.class.sharedObserverQueue
                                                                               usingBlock:^{
                                                                                 [_self didObserveSoftBoundaryTime];
                                                                               }];
@@ -953,7 +964,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
   NSLog(@"[Player] No longer ignoring time observations");
   
   if (playerPlaybackStartBoundaryTimeObserver) {
-    dispatch_async(self.class.sharedQueue, ^{
+    dispatch_async(self.class.sharedObserverQueue, ^{
       [self.player removeTimeObserver:playerPlaybackStartBoundaryTimeObserver];
       playerPlaybackStartBoundaryTimeObserver = nil;
     });
@@ -1072,7 +1083,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
 - (void)setupPlaybackStartBoundaryObserverCompletionHandler:(void (^)())completionHandler {
   if (self.player.currentItem) {
     
-    dispatch_async(self.class.sharedQueue, ^{
+    dispatch_async(self.class.sharedObserverQueue, ^{
       if (playerPlaybackStartBoundaryTimeObserver) {
         [self.player removeTimeObserver:playerPlaybackStartBoundaryTimeObserver];
         playerPlaybackStartBoundaryTimeObserver = nil;
@@ -1105,7 +1116,7 @@ static void * const PRXPlayerAVPlayerCurrentItemBufferEmptyContext = (void*)&PRX
         __block id _self = self;
         
         playerPlaybackStartBoundaryTimeObserver = [self.player addBoundaryTimeObserverForTimes:@[ boundaryTime_v ]
-                                                                                         queue:self.class.sharedQueue
+                                                                                         queue:self.class.sharedObserverQueue
                                                                                     usingBlock:^{
                                                                                       [_self didObservePlaybackStartBoundaryTime];
                                                                                     }];

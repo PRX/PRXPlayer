@@ -28,7 +28,8 @@
 
 @interface PRXPlayer ()
 
-+ (dispatch_queue_t)sharedQueue;
++ (dispatch_queue_t)sharedObserverQueue;
++ (dispatch_queue_t)sharedAssignmentQueue;
 
 @property (nonatomic, strong, readonly) Reachability *reach;
 @property (nonatomic, strong) AVPlayer *player;
